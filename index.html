@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./res/css.css">
+    <title>ORMS Layout Generator - Web edition</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="brand2"> ORMS Layout Generator - Web Edition v0.8</div>
+        <div class="brand"> Vybraná buňka: X: 0, Y: 0</div>
+        <div class="navbar-buttons">
+            <button id="convertLuaButton" class="button">Převést do LUA</button>
+            <button id="saveCSVButton" class="button">Uložit do .csv</button>
+            <button id="loadCSVButton" class="button">Načíst z .csv</button>
+            <button id="deleteAllButton" class="button">Smazat vše</button>
+            <button id="helpButton" class="button">Nápověda</button>
+        </div>
+    </nav>
+    <div id="table-container">
+        <table id="excel-table">
+            <!-- JavaScript will generate rows and cells -->
+        </table>
+    </div>
+    <!-- Context menu -->
+    <div class="wrapper">
+        <div class="content">
+            <ul class="menu">
+                <li class="item share">
+                    <div>
+                        <i class="uil uil-share"></i>
+                        <span>Kolej</span>
+                    </div>
+                    <i class="uil uil-angle-right"></i>
+                    <ul class="share-menu">
+                        <li class="item">
+                            <span>═</span>
+                        </li>
+                        <li class="item">
+                            <span>╗</span>
+                        </li>
+                        <li class="item">
+                            <span>╚</span>
+                        </li>
+                        <li class="item">
+                            <span>╔</span>
+                        </li>
+                        <li class="item">
+                            <span>╝</span>
+                        </li>
+                        <li class="item">
+                            <span>║</span>
+                        </li>
+                        <li class="item">
+                            <span>╡</span>
+                        </li>
+                        <li class="item">
+                            <span>╞</span>
+                        </li>
+                        <li class="item">
+                            <span>╧</span>
+                        </li>
+                        <li class="item">
+                            <span>╤</span>
+                        </li>
+                    </ul>
+                </li>
+                <li class="item">
+                    <i class="uil uil-link-alt"></i>
+                    <span>Vyhybka</span>
+                </li>
+                <li class="item">
+                    <i class="uil uil-edit"></i>
+                    <span>Návěstidlo</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <script src="./res/main.js"></script>
+    <script src="./res/header.js"></script>
+    <script src="./res/navbar.js"></script>
+</body>
+</html>
