@@ -50,24 +50,24 @@ function convertToLua() {
                     // Signals
                     let Temp2 = TemplateSignal.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
-                    Temp2 = Temp2.replace('z', cellText.charAt(0));
-                    Temp2 = Temp2.replace("q", cellText.substring(4));
+                    Temp2 = Temp2.replace('q', cellText.charAt(0));
+                    Temp2 = Temp2.replace("z", cellText.substring(4));
                     Temp2 = Temp2 + '\n';
                     StorageSignals += Temp2;
                 }
-            } else if (cellText === "═") {
+            } else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║"].includes(cellText)) {
                 // Tracks
                 let trackSegment = cellText;
                 let loop = 1;
 
-                while ((col + loop) < table.rows[row].cells.length && table.rows[row].cells[col + loop].textContent.trim() === "═") {
+                while (  (col + loop) < table.rows[row].cells.length && table.rows[row].cells[col + loop].textContent.trim() === "═") {
                     trackSegment += table.rows[row].cells[col + loop].textContent.trim();
                     loop++;
                 }
 
                 if ((col + loop) < table.rows[row].cells.length) {
                     const nextCell = table.rows[row].cells[col + loop].textContent.trim();
-                    if (nextCell === "╗" || nextCell === "╝" || nextCell === "╚" || nextCell === "╗") {
+                    if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║"].includes(nextCell)) {
                         trackSegment += nextCell;
                         loop++;
                     }
@@ -86,12 +86,24 @@ function convertToLua() {
 
     Output = Config + Signals + StorageSignals + End + Tracks + StorageTracks + End + Switches + StorageSwitches + End + Return;
     
-    // Copy to clipboard and alert
-    navigator.clipboard.writeText(Output).then(() => {
-        alert('Code copied to clipboard');
-    }).catch(err => {
-        console.error('Failed to copy text to clipboard', err);
-    });
+    // Open new tab with the generated code
+    const newWindow = window.open();
+    newWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Generated Code</title>
+            <link rel="stylesheet" href="style.css">
+        </head>
+        <body>
+            <div class="container">
+                <pre>${Output}</pre>
+            </div>
+        </body>
+        </html>
+    `);
 }
 
 // Function to save table content to a CSV file
