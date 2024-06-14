@@ -158,6 +158,9 @@ td:focus {
   box-shadow: 0 5px 10px rgba(0,0,0,0.08);
   transition: 0.2s ease;
 }
+#signals{
+  width: 160px;
+}
 .share:hover .share-menu{
   opacity: 1;
   pointer-events: auto;

@@ -14,16 +14,22 @@ document.getElementById('helpButton').addEventListener('click', displayHelp);
 function convertToLua() {
     const TemplateTrack = "{y, x, \"z\"},";
     const TemplateSwitch = "{y, x, \"z\", \"r\", \"q\"},";
+    const TemplateCrossing = "{y, x, \"z\", \"r\", \"q\"},";
     const TemplateSignal = "{y, x, \"z\", \"q\"},";
+    const TemplateLabel = "{y, x, \"q\"},";
 
     let StorageSignals = "\n";
     let StorageTracks = "\n";
     let StorageSwitches = "\n";
+    let StorageCrossings = "\n";
+    let StorageLable = "\n";
 
     let Config = "Config = {}\n";
     let Tracks = "Config.Tracks = {";
     let Switches = "Config.Switches = {";
     let Signals = "Config.Signals = {";
+    let Crossings = "Config.Crossings = {";
+    let Labels = "Config.Labels = {";
     let Return = "return Config";
     let End = "}" + "\n";
     let Output;
@@ -37,7 +43,8 @@ function convertToLua() {
             const cellText = cell.textContent.trim();
 
             if (cellText.length > 2) {
-                if (cellText.charAt(2) === 'V') {
+                console.log(cellText.charAt(2))
+                if (cellText.charAt(2) === 'V' && cellText.charAt(3) === ' ') {
                     // Switches
                     let Temp = TemplateSwitch.replace("x", row);
                     Temp = Temp.replace("y", col);
@@ -46,7 +53,7 @@ function convertToLua() {
                     Temp = Temp.replace("q", cellText.substring(6));
                     Temp = Temp + '\n';
                     StorageSwitches += Temp;
-                } else if (cellText.charAt(2) === 'N') {
+                } else if (cellText.charAt(2) === 'N' && cellText.charAt(3) === ' ') {
                     // Signals
                     let Temp2 = TemplateSignal.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
@@ -54,20 +61,36 @@ function convertToLua() {
                     Temp2 = Temp2.replace("z", cellText.substring(4));
                     Temp2 = Temp2 + '\n';
                     StorageSignals += Temp2;
+                } else if (cellText.charAt(0) === 'L') {
+                    // Labels
+                    let Temp2 = TemplateLabel.replace("x", row);
+                    Temp2 = Temp2.replace("y", col);
+                    Temp2 = Temp2.replace('q', cellText.substring(2));
+                    Temp2 = Temp2 + '\n';
+                    StorageLable += Temp2;
+                } else if (cellText.charAt(2) === 'P' && cellText.charAt(3) === ' ') {
+                    // Crossings
+                    let Temp = TemplateCrossing.replace("x", row);
+                    Temp = Temp.replace("y", col);
+                    Temp = Temp.replace('z', cellText.charAt(0));
+                    Temp = Temp.replace('r', cellText.charAt(4));
+                    Temp = Temp.replace("q", cellText.substring(6));
+                    Temp = Temp + '\n';
+                    StorageCrossings += Temp;
                 }
-            } else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║"].includes(cellText)) {
+            } else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(cellText)) {
                 // Tracks
                 let trackSegment = cellText;
                 let loop = 1;
 
-                while (  (col + loop) < table.rows[row].cells.length && table.rows[row].cells[col + loop].textContent.trim() === "═") {
+                while (["═", "︹", "︺", "⦘", "⦗"].includes((col + loop) < table.rows[row].cells.length && table.rows[row].cells[col + loop].textContent.trim())) {
                     trackSegment += table.rows[row].cells[col + loop].textContent.trim();
                     loop++;
                 }
 
                 if ((col + loop) < table.rows[row].cells.length) {
                     const nextCell = table.rows[row].cells[col + loop].textContent.trim();
-                    if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║"].includes(nextCell)) {
+                    if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(nextCell)) {
                         trackSegment += nextCell;
                         loop++;
                     }
@@ -84,7 +107,7 @@ function convertToLua() {
         }
     }
 
-    Output = Config + Signals + StorageSignals + End + Tracks + StorageTracks + End + Switches + StorageSwitches + End + Return;
+    Output = Config + Signals + StorageSignals + End + Tracks + StorageTracks + End + Switches + StorageSwitches + End + Crossings + StorageCrossings + End + Labels + StorageLable + End + Return;
     
     // Open new tab with the generated code
     const newWindow = window.open();
@@ -145,6 +168,7 @@ function loadFromCSV() {
         reader.onload = (e) => {
             const csvContent = e.target.result;
             const rows = csvContent.split('\n');
+            deleteAllCells()
             for (let row = 0; row < numRows; row++) {
                 const rowData = rows[row] ? rows[row].split(',') : [];
                 for (let col = 0; col < numCols; col++) {
@@ -185,4 +209,4 @@ function displayHelp() {
     link.href = helpURL;
     link.target = '_blank';
     link.click();
-}
+}6

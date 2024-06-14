@@ -43,9 +43,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Handle click for "Vyhybky"
                     pasteTextIntoSelectedCell("═ V ═ Vy1")
                     break;
+                case 'Název Stanice':
+                    // Handle click for "Název Stanice"
+                    pasteTextIntoSelectedCell("L Nymburk Hl.n.")
+                    break;
+                case 'Hlavní':
+                    // Handle click for "Návěstidlo - Hlavní"
+                    pasteTextIntoSelectedCell("◀ N S1Kr")
+                    break;
+                case 'Předvěst':
+                    // Handle click for "Návěstidlo - Předvěst"
+                    pasteTextIntoSelectedCell("◁ N PrS1Kr")
+                    break;
+                case 'Posunovací':
+                    // Handle click for "Návěstidlo - Posunovací"
+                    pasteTextIntoSelectedCell("< N Se1Kr")
+                    break;
+                case '╪':
+                    // Handle click for "Přejezd - ╪"
+                    pasteTextIntoSelectedCell("╪ P ═ P4953")
+                    break;
+                case '╫':
+                    // Handle click for "Přejezd - ╫"
+                    pasteTextIntoSelectedCell("╫ P ║ P4953")
+                    break;
+                //Empty clicks
+                case 'Přejezd':
+                    break;
                 case 'Návěstidlo':
-                    // Handle click for "Návěstidlo"
-                    pasteTextIntoSelectedCell("< N SeKr1")
+                    break;
+                case 'Kolej':
+                    break;
+                case 'Tunel':
                     break;
                 // Add cases for other menu items as needed
                 default:
@@ -58,19 +87,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add click event listeners for context menu items and sub-items
     contextMenu.addEventListener('click', handleMenuItemClick);
 
-// Function to paste specified text into the selected cell's div
-function pasteTextIntoSelectedCell(text) {
-    const [_, column, row] = coordinatesDisplay.textContent.match(/X: (\d+), Y: (\d+)/);
-    const selectedCell = table.rows[row].cells[column];
-    if (selectedCell) {
-        const cellDiv = selectedCell.querySelector('div');
-        if (cellDiv) {
-            addCellChange(cellDiv, cellDiv.textContent, text);
-            cellDiv.textContent = text;
-            selectedCell.focus(); // Focus the cell after pasting the text
+    // Function to paste specified text into the selected cell's div
+    function pasteTextIntoSelectedCell(text) {
+        const [_, column, row] = coordinatesDisplay.textContent.match(/X: (\d+), Y: (\d+)/);
+        const selectedCell = table.rows[row].cells[column];
+        if (selectedCell) {
+            const cellDiv = selectedCell.querySelector('div');
+            if (cellDiv) {
+                addCellChange(cellDiv, cellDiv.textContent, text);
+                cellDiv.textContent = text;
+                selectedCell.focus(); // Focus the cell after pasting the text
+            }
         }
     }
-}
 
 
     // Function to add a cell change to the cellChanges object
