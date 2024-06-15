@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             switch (text) {
                 case 'Vyhybka':
                     // Handle click for "Vyhybky"
-                    pasteTextIntoSelectedCell("═ V ═ Vy1")
+                    pasteTextIntoSelectedCell("═ V ═ Vy1Kr")
                     break;
                 case 'Název Stanice':
                     // Handle click for "Název Stanice"
