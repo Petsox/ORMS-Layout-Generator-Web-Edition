@@ -43,8 +43,7 @@ function convertToLua() {
             const cellText = cell.textContent.trim();
 
             if (cellText.length > 2) {
-                console.log(cellText.charAt(2))
-                if (cellText.charAt(2) === 'V' && cellText.charAt(3) === ' ') {
+                if (cellText.charAt(2) === 'V' && cellText.charAt(1) === ' ') {
                     // Switches
                     let Temp = TemplateSwitch.replace("x", row);
                     Temp = Temp.replace("y", col);
@@ -52,8 +51,9 @@ function convertToLua() {
                     Temp = Temp.replace('r', cellText.charAt(4));
                     Temp = Temp.replace("q", cellText.substring(6));
                     Temp = Temp + '\n';
+                    console.log(Temp)
                     StorageSwitches += Temp;
-                } else if (cellText.charAt(2) === 'N' && cellText.charAt(3) === ' ') {
+                } else if (cellText.charAt(2) === 'N' && cellText.charAt(1) === ' ') {
                     // Signals
                     let Temp2 = TemplateSignal.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
@@ -68,7 +68,7 @@ function convertToLua() {
                     Temp2 = Temp2.replace('q', cellText.substring(2));
                     Temp2 = Temp2 + '\n';
                     StorageLable += Temp2;
-                } else if (cellText.charAt(2) === 'P' && cellText.charAt(3) === ' ') {
+                } else if (cellText.charAt(2) === 'P' && cellText.charAt(1) === ' ') {
                     // Crossings
                     let Temp = TemplateCrossing.replace("x", row);
                     Temp = Temp.replace("y", col);
