@@ -43,7 +43,14 @@ function convertToLua() {
             const cellText = cell.textContent.trim();
 
             if (cellText.length > 2) {
-                if (cellText.charAt(2) === 'V' && cellText.charAt(1) === ' ') {
+                if (cellText.charAt(0) === 'L') {
+                    // Labels
+                    let Temp2 = TemplateLabel.replace("x", row);
+                    Temp2 = Temp2.replace("y", col);
+                    Temp2 = Temp2.replace('q', cellText.substring(2));
+                    Temp2 = Temp2 + '\n';
+                    StorageLable += Temp2;
+                }else if (cellText.charAt(2) === 'V') {
                     // Switches
                     let Temp = TemplateSwitch.replace("x", row);
                     Temp = Temp.replace("y", col);
@@ -53,7 +60,7 @@ function convertToLua() {
                     Temp = Temp + '\n';
                     console.log(Temp)
                     StorageSwitches += Temp;
-                } else if (cellText.charAt(2) === 'N' && cellText.charAt(1) === ' ') {
+                } else if (cellText.charAt(2) === 'N') {
                     // Signals
                     let Temp2 = TemplateSignal.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
@@ -61,14 +68,7 @@ function convertToLua() {
                     Temp2 = Temp2.replace("z", cellText.substring(4));
                     Temp2 = Temp2 + '\n';
                     StorageSignals += Temp2;
-                } else if (cellText.charAt(0) === 'L') {
-                    // Labels
-                    let Temp2 = TemplateLabel.replace("x", row);
-                    Temp2 = Temp2.replace("y", col);
-                    Temp2 = Temp2.replace('q', cellText.substring(2));
-                    Temp2 = Temp2 + '\n';
-                    StorageLable += Temp2;
-                } else if (cellText.charAt(2) === 'P' && cellText.charAt(1) === ' ') {
+                } else if (cellText.charAt(2) === 'P') {
                     // Crossings
                     let Temp = TemplateCrossing.replace("x", row);
                     Temp = Temp.replace("y", col);
