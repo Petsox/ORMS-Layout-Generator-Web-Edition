@@ -1,134 +1,194 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const table = document.getElementById('excel-table');
-    const coordinatesDisplay = document.querySelector('.brand');
-    const contextMenu = document.querySelector(".wrapper");
-    const cellChanges = {}; // Object to store cell changes for undo functionality
+document.addEventListener('DOMContentLoaded', () => {  
+    // Run this code only after the whole HTML document has fully loaded
 
-    // Function to handle mousedown event on the table
+    const table = document.getElementById('excel-table');  
+    // Reference to the table acting like an Excel grid
+
+    const coordinatesDisplay = document.querySelector('.brand');  
+    // Element that displays the currently selected cell coordinates
+
+    const contextMenu = document.querySelector(".wrapper");  
+    // Custom right-click context menu
+
+    const cellChanges = {};  
+    // Stores cell modifications for undo functionality (key: "row-column")
+
+
+    // Handle table mousedown
     table.addEventListener('mousedown', (event) => {
-        const cell = event.target.closest('td');
+        const cell = event.target.closest('td');  
+        // Find the nearest table cell clicked (ignore clicks on padding/inner elements)
+
         if (cell) {
-            const column = cell.cellIndex;
-            const row = cell.parentElement.rowIndex;
-            coordinatesDisplay.textContent = `Vybraná buňka: X: ${column}, Y: ${row}`;
+            const column = cell.cellIndex;  
+            // Column index of the clicked cell
+
+            const row = cell.parentElement.rowIndex;  
+            // Row index of the clicked cell
+
+            coordinatesDisplay.textContent = `Vybraná buňka: X: ${column}, Y: ${row}`;  
+            // Update coordinate display
         }
     });
 
-    // Function to handle contextmenu event on the table
+
+    // Custom right-click menu
     table.addEventListener("contextmenu", e => {
-        e.preventDefault();
-        const x = e.clientX, y = e.clientY
+        e.preventDefault();  
+        // Prevent the default browser context menu
 
-        const rect = table.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
+        const x = e.clientX, y = e.clientY;  
+        // Cursor position on screen
 
+        const rect = table.getBoundingClientRect();  
+        // Bounding rectangle for table (position and size)
+
+        const offsetX = e.clientX - rect.left;  
+        const offsetY = e.clientY - rect.top;  
+        // Cursor position relative to the table
+
+        // Show context menu only when right-clicking **inside** the table bounds
         if (offsetX >= 0 && offsetX <= rect.width && offsetY >= 0 && offsetY <= rect.height) {
-            contextMenu.style.left = `${x}px`;
-            contextMenu.style.top = `${y}px`;
-            contextMenu.style.visibility = "visible";
+            contextMenu.style.left = `${x}px`;  
+            contextMenu.style.top = `${y}px`;  
+            contextMenu.style.visibility = "visible";  
         }
     });
 
-    // Function to hide context menu when clicked outside
+
+    // Hide context menu on click outside
     document.addEventListener("click", () => contextMenu.style.visibility = "hidden");
 
-    // Function to handle click events for context menu items
+    //Handle clicks on context menu items
     function handleMenuItemClick(event) {
-        const menuItem = event.target.closest('.item');
+        const menuItem = event.target.closest('.item');  
+        // Detect actual menu item click (even when clicking its child elements)
+
         if (menuItem) {
-            const text = menuItem.querySelector('span').textContent;
+            const text = menuItem.querySelector('span').textContent;  
+            // Read displayed item text to determine action
+
             switch (text) {
+
+                // Insert preset symbols / text based on menu selection
                 case 'Vyhybka':
-                    // Handle click for "Vyhybky"
-                    pasteTextIntoSelectedCell("═ V ═ Vy1Kr")
+                    pasteTextIntoSelectedCell("═ V ═ Vy1Kr");
                     break;
+
                 case 'Název Stanice':
-                    // Handle click for "Název Stanice"
-                    pasteTextIntoSelectedCell("L Nymburk Hl.n.")
+                    pasteTextIntoSelectedCell("L Nymburk Hl.n.");
                     break;
+
                 case 'Hlavní':
-                    // Handle click for "Návěstidlo - Hlavní"
-                    pasteTextIntoSelectedCell("◀ N S1Kr")
+                    pasteTextIntoSelectedCell("◀ N S1Kr");
                     break;
+
                 case 'Předvěst':
-                    // Handle click for "Návěstidlo - Předvěst"
-                    pasteTextIntoSelectedCell("◁ N PrS1Kr")
+                    pasteTextIntoSelectedCell("◁ N PrS1Kr");
                     break;
+
                 case 'Posunovací':
-                    // Handle click for "Návěstidlo - Posunovací"
-                    pasteTextIntoSelectedCell("< N Se1Kr")
+                    pasteTextIntoSelectedCell("< N Se1Kr");
                     break;
+
                 case '╪':
-                    // Handle click for "Přejezd - ╪"
-                    pasteTextIntoSelectedCell("╪ P ═ P4953")
+                    pasteTextIntoSelectedCell("╪ P ═ P4953");
                     break;
+
                 case '╫':
-                    // Handle click for "Přejezd - ╫"
-                    pasteTextIntoSelectedCell("╫ P ║ P4953")
+                    pasteTextIntoSelectedCell("╫ P ║ P4953");
                     break;
-                //Empty clicks
+
+                // Items that do nothing
                 case 'Přejezd':
-                    break;
                 case 'Návěstidlo':
-                    break;
                 case 'Kolej':
-                    break;
                 case 'Tunel':
                     break;
-                // Add cases for other menu items as needed
+
+                // Default: paste the item's text itself
                 default:
-                    pasteTextIntoSelectedCell(text)
+                    pasteTextIntoSelectedCell(text);
                     break;
             }
         }
     }
 
-    // Add click event listeners for context menu items and sub-items
-    contextMenu.addEventListener('click', handleMenuItemClick);
+    contextMenu.addEventListener('click', handleMenuItemClick);  
+    // Listen for clicks inside the custom context menu
 
-    // Function to paste specified text into the selected cell's div
+
     function pasteTextIntoSelectedCell(text) {
+        // Extract stored coordinates of the selected cell
         const [_, column, row] = coordinatesDisplay.textContent.match(/X: (\d+), Y: (\d+)/);
-        const selectedCell = table.rows[row].cells[column];
+
+        const selectedCell = table.rows[row].cells[column];  
+        // Access the referenced cell using row/column numbers
+
         if (selectedCell) {
-            const cellDiv = selectedCell.querySelector('div');
+            const cellDiv = selectedCell.querySelector('div');  
+            // Text inside each cell is inside a <div>
+
             if (cellDiv) {
-                addCellChange(cellDiv, cellDiv.textContent, text);
-                cellDiv.textContent = text;
-                selectedCell.focus(); // Focus the cell after pasting the text
+                addCellChange(cellDiv, cellDiv.textContent, text);  
+                // Save old/new values for undo
+
+                cellDiv.textContent = text;  
+                // Apply new cell content
+
+                selectedCell.focus();  
+                // Focus the cell after editing
             }
         }
     }
 
 
-    // Function to add a cell change to the cellChanges object
+    //Save cell changes for undo functionality
     function addCellChange(cell, oldValue, newValue) {
-        const column = cell.cellIndex;
-        const row = cell.parentElement.rowIndex;
-        const cellKey = `${row}-${column}`;
+
+        const column = cell.cellIndex;  
+        // Column number of the div inside the cell
+
+        const row = cell.parentElement.rowIndex;  
+        // Row number
+
+        const cellKey = `${row}-${column}`;  
+        // Unique cell identifier
+
+        // Store only the first change (no stacking per cell)
         if (!cellChanges[cellKey]) {
-            cellChanges[cellKey] = { oldValue: oldValue, newValue: newValue };
+            cellChanges[cellKey] = { oldValue, newValue };
         }
     }
 
-    // Function to handle undo action (CTRL + Z)
+
+    // Catch Ctrl+Z for undoing last change
     document.addEventListener('keydown', (event) => {
         if (event.ctrlKey && event.key === 'z') {
             undoLastChange();
         }
     });
 
-    // Function to undo the last change made to a cell
     function undoLastChange() {
-        const lastChangeKey = Object.keys(cellChanges).pop();
+        const lastChangeKey = Object.keys(cellChanges).pop();  
+        // Get the latest added cell change
+
         if (lastChangeKey) {
-            const [row, column] = lastChangeKey.split('-');
-            const cell = table.rows[row].cells[column];
-            const lastChange = cellChanges[lastChangeKey];
+            const [row, column] = lastChangeKey.split('-');  
+            // Extract position
+
+            const cell = table.rows[row].cells[column];  
+            // Find the actual cell
+
+            const lastChange = cellChanges[lastChangeKey];  
+            // Get old/new values
+
             if (cell && lastChange) {
-                cell.textContent = lastChange.oldValue;
-                delete cellChanges[lastChangeKey];
+                cell.textContent = lastChange.oldValue;  
+                // Restore original cell text
+
+                delete cellChanges[lastChangeKey];  
+                // Remove the change from history
             }
         }
     }

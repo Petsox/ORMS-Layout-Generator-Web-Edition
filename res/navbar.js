@@ -1,29 +1,42 @@
-// Global variables
-const table = document.getElementById('excel-table');
-const numRows = 50;
-const numCols = 160;
+import { numRows, numCols } from "./config.js";
 
-// Event listeners for navbar buttons
-document.getElementById('convertLuaButton').addEventListener('click', convertToLua);
-document.getElementById('saveCSVButton').addEventListener('click', saveToCSV);
-document.getElementById('loadCSVButton').addEventListener('click', loadFromCSV);
-document.getElementById('deleteAllButton').addEventListener('click', deleteAllCells);
-document.getElementById('helpButton').addEventListener('click', displayHelp);
+const table = document.getElementById('excel-table');  
+// Reference to the editable grid table
 
-// Function to convert layout to LUA format
+document.getElementById('convertLuaButton').addEventListener('click', convertToLua);  
+// Converts all cell content into formatted LUA configuration
+
+document.getElementById('saveCSVButton').addEventListener('click', saveToCSV);  
+// Save table into a CSV file
+
+document.getElementById('loadCSVButton').addEventListener('click', loadFromCSV);  
+// Load CSV file into the grid
+
+document.getElementById('deleteAllButton').addEventListener('click', deleteAllCells);  
+// Clear all cells
+
+document.getElementById('helpButton').addEventListener('click', displayHelp);  
+// Open help page in a new tab
+
+
+// Converts the entire table content into LUA configuration format
 function convertToLua() {
+
+    // Templates for various LUA entries
     const TemplateTrack = "{y, x, \"z\"},";
     const TemplateSwitch = "{y, x, \"z\", \"r\", \"q\"},";
     const TemplateCrossing = "{y, x, \"z\", \"r\", \"q\"},";
     const TemplateSignal = "{y, x, \"z\", \"q\"},";
     const TemplateLabel = "{y, x, \"q\"},";
 
+    // Storage for the categorized LUA strings
     let StorageSignals = "\n";
     let StorageTracks = "\n";
     let StorageSwitches = "\n";
     let StorageCrossings = "\n";
     let StorageLable = "\n";
 
+    // The structure of the exported LUA table
     let Config = "Config = {}\n";
     let Tracks = "Config.Tracks = {";
     let Switches = "Config.Switches = {";
@@ -31,85 +44,131 @@ function convertToLua() {
     let Crossings = "Config.Crossings = {";
     let Labels = "Config.Labels = {";
     let Return = "return Config";
-    let End = "}" + "\n";
+    let End = "}\n";
     let Output;
 
-    const table = document.getElementById('excel-table');
+    const table = document.getElementById('excel-table');  
+    // Fresh reference (not strictly necessary, but harmless)
 
-    // Loop through each cell in the table
+
+    // Loop over every cell in the grid
     for (let row = 0; row < table.rows.length; row++) {
         for (let col = 0; col < table.rows[row].cells.length; col++) {
-            const cell = table.rows[row].cells[col];
-            const cellText = cell.textContent.trim();
 
+            const cell = table.rows[row].cells[col];
+            const cellText = cell.textContent.trim();  
+            // Get cleaned text for processing
+
+            //Track labels, switches, signals, etc.
             if (cellText.length > 2) {
+
+                // Label: begins with 'L'
                 if (cellText.charAt(0) === 'L') {
-                    // Labels
                     let Temp2 = TemplateLabel.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
-                    Temp2 = Temp2.replace('q', cellText.substring(2));
-                    Temp2 = Temp2 + '\n';
-                    StorageLable += Temp2;
-                }else if (cellText.charAt(2) === 'V') {
-                    // Switches
+                    Temp2 = Temp2.replace('q', cellText.substring(2));  
+                    // Label text after "L "
+
+                    StorageLable += Temp2 + '\n';
+                }
+
+                // Switch (e.g., "═ V ═ Vy1")
+                else if (cellText.charAt(2) === 'V') {
                     let Temp = TemplateSwitch.replace("x", row);
                     Temp = Temp.replace("y", col);
-                    Temp = Temp.replace('z', cellText.charAt(0));
-                    Temp = Temp.replace('r', cellText.charAt(4));
-                    Temp = Temp.replace("q", cellText.substring(6));
-                    Temp = Temp + '\n';
-                    console.log(Temp)
-                    StorageSwitches += Temp;
-                } else if (cellText.charAt(2) === 'N') {
-                    // Signals
+                    Temp = Temp.replace('z', cellText.charAt(0));  
+                    // First letter is type
+
+                    Temp = Temp.replace('r', cellText.charAt(4));  
+                    // Direction char
+
+                    Temp = Temp.replace("q", cellText.substring(6));  
+                    // ID portion
+
+                    StorageSwitches += Temp + '\n';
+                }
+
+                // Signal (e.g., "◀ N S1")
+                else if (cellText.charAt(2) === 'N') {
                     let Temp2 = TemplateSignal.replace("x", row);
                     Temp2 = Temp2.replace("y", col);
-                    Temp2 = Temp2.replace('q', cellText.charAt(0));
-                    Temp2 = Temp2.replace("z", cellText.substring(4));
-                    Temp2 = Temp2 + '\n';
-                    StorageSignals += Temp2;
-                } else if (cellText.charAt(2) === 'P') {
-                    // Crossings
+                    Temp2 = Temp2.replace('q', cellText.charAt(0));  
+                    // Symbol
+
+                    Temp2 = Temp2.replace("z", cellText.substring(4));  
+                    // Signal ID
+
+                    StorageSignals += Temp2 + '\n';
+                }
+
+                // Crossing (e.g., "╪ P P4953")
+                else if (cellText.charAt(2) === 'P') {
                     let Temp = TemplateCrossing.replace("x", row);
                     Temp = Temp.replace("y", col);
-                    Temp = Temp.replace('z', cellText.charAt(0));
-                    Temp = Temp.replace('r', cellText.charAt(4));
-                    Temp = Temp.replace("q", cellText.substring(6));
-                    Temp = Temp + '\n';
-                    StorageCrossings += Temp;
+                    Temp = Temp.replace('z', cellText.charAt(0));  
+                    // Symbol type
+
+                    Temp = Temp.replace('r', cellText.charAt(4));  
+                    // Orientation
+
+                    Temp = Temp.replace("q", cellText.substring(6));  
+                    // Crossing ID
+
+                    StorageCrossings += Temp + '\n';
                 }
-            } else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(cellText)) {
-                // Tracks
-                let trackSegment = cellText;
+            }
+
+            //Track segments
+            else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(cellText)) {
+
+                let trackSegment = cellText;  
+                // Starting symbol of the track
+
                 let loop = 1;
 
+                // Collect continuous track symbols to the right
                 while (["═", "︹", "︺", "⦘", "⦗"].includes((col + loop) < table.rows[row].cells.length && table.rows[row].cells[col + loop].textContent.trim())) {
+
                     trackSegment += table.rows[row].cells[col + loop].textContent.trim();
                     loop++;
                 }
 
+                // Check next special symbols after main segment
                 if ((col + loop) < table.rows[row].cells.length) {
                     const nextCell = table.rows[row].cells[col + loop].textContent.trim();
+
                     if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(nextCell)) {
                         trackSegment += nextCell;
                         loop++;
                     }
                 }
 
+                // Convert to template
                 let Temp3 = TemplateTrack.replace("x", row);
                 Temp3 = Temp3.replace("y", col);
                 Temp3 = Temp3.replace("z", trackSegment);
-                Temp3 = Temp3 + '\n';
 
-                StorageTracks += Temp3;
-                col += loop - 1; // Update col to skip over the processed track cells
+                StorageTracks += Temp3 + '\n';
+
+                col += loop - 1;  
+                // Skip processed track cells
             }
         }
     }
 
-    Output = Config + Signals + StorageSignals + End + Tracks + StorageTracks + End + Switches + StorageSwitches + End + Crossings + StorageCrossings + End + Labels + StorageLable + End + Return;
-    
-    // Open new tab with the generated code
+
+    // Combine all parts into final output
+    Output =
+        Config +
+        Signals + StorageSignals + End +
+        Tracks + StorageTracks + End +
+        Switches + StorageSwitches + End +
+        Crossings + StorageCrossings + End +
+        Labels + StorageLable + End +
+        Return;
+
+
+    // Open the generated code in a new window
     const newWindow = window.open();
     newWindow.document.write(`
         <!DOCTYPE html>
@@ -129,84 +188,123 @@ function convertToLua() {
     `);
 }
 
-// Function to save table content to a CSV file
 function saveToCSV() {
+
     let csvContent = '';
+
+    // Loop over every row/column
     for (let row = 0; row < numRows; row++) {
         for (let col = 0; col < numCols; col++) {
+
             const cell = table.rows[row].cells[col];
-            const cellText = cell.textContent.trim() || 'null';
-            csvContent += cellText + ',';
+            const cellText = cell.textContent.trim() || 'null';  
+            // Use 'null' to preserve empty cells
+
+            csvContent += cellText + ',';  
+            // CSV value + comma
         }
-        csvContent += '\n';
+        csvContent += '\n';  
+        // New line per row
     }
-    downloadCsv(csvContent);
+
+    downloadCsv(csvContent);  
+    // Trigger download
 }
 
-// Function to download CSV file
 function downloadCsv(content) {
-    const blob = new Blob([content], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+
+    const blob = new Blob([content], { type: 'text/csv' });  
+    // Create file blob
+
+    const url = URL.createObjectURL(blob);  
+    // Temporary file URL
+
+    const a = document.createElement('a');  
+    // Dummy anchor to trigger download
+
     a.href = url;
     a.download = 'table_data.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    a.click();  
+    // Programmatically start download
+
+    URL.revokeObjectURL(url);  
+    // Cleanup temporary URL
 }
 
-// Function to load CSV file content into the table
 function loadFromCSV() {
+
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.csv';
+    fileInput.accept = '.csv';  
+    // Restrict file chooser to CSV
 
     fileInput.addEventListener('change', (event) => {
+
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) return;  
 
         const reader = new FileReader();
+
         reader.onload = (e) => {
-            const csvContent = e.target.result;
-            const rows = csvContent.split('\n');
-            deleteAllCells()
+
+            const csvContent = e.target.result;  
+            const rows = csvContent.split('\n');  
+            // Split CSV into rows
+
+            deleteAllCells();  
+            // Clear existing table first
+
             for (let row = 0; row < numRows; row++) {
                 const rowData = rows[row] ? rows[row].split(',') : [];
+
                 for (let col = 0; col < numCols; col++) {
+
                     const cell = table.rows[row].cells[col];
                     const div = cell.querySelector('div');
+
                     if (rowData[col] !== "null") {
-                        div.textContent = rowData[col] || '';
+                        div.textContent = rowData[col] || '';  
+                        // Apply cell text
                     }
                 }
             }
         };
-        reader.readAsText(file);
+
+        reader.readAsText(file);  
+        // Read CSV file
     });
 
-    fileInput.click();
+    fileInput.click();  
+    // Open file chooser
 }
 
-
-// Function to delete all text in the div within each cell
 function deleteAllCells() {
     for (let row = 0; row < numRows; row++) {
         for (let col = 0; col < numCols; col++) {
+
             const cell = table.rows[row].cells[col];
             const div = cell.querySelector('div');
-            div.textContent = ''; // Clear the text content of the div
+
+            div.textContent = '';  
+            // Remove text from cell
         }
     }
 }
 
-// Add event listener to the delete all cells button
+
+// Allow button to trigger the delete function
 document.getElementById('deleteAllButton').addEventListener('click', deleteAllCells);
 
-
-// Function to display help
 function displayHelp() {
-    const helpURL = 'help.html';
+
+    const helpURL = 'help.html';  
+    // Help file URL
+
     const link = document.createElement('a');
     link.href = helpURL;
-    link.target = '_blank';
-    link.click();
-}6
+    link.target = '_blank';  
+    // Open in new tab
+
+    link.click();  
+    // Trigger opening
+}
