@@ -86,9 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'Předvěst':
                     pasteTextIntoSelectedCell("◁ N PrS1Kr");
                     break;
-
-                case 'Posunovací':
-                    pasteTextIntoSelectedCell("< N Se1Kr");
+                case 'Seřaďovací':
+                    // Handle click for "Návěstidlo - Seřaďovací"
+                    pasteTextIntoSelectedCell("< N Se1Kr")
                     break;
 
                 case '╪':
