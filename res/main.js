@@ -1,4 +1,4 @@
-    import { numRows, numCols } from "./config.js";
+import { numRows, numCols } from "./config.js";
 
 document.addEventListener('DOMContentLoaded', (event) => {  
     // Run script only after the entire document is fully loaded
