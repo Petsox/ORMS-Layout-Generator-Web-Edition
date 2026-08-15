@@ -25,6 +25,11 @@ function convertToLua() {
     // Templates for various LUA entries
     const TemplateTrack = "{y, x, \"z\"},";
     const TemplateSwitch = "{y, x, \"z\", \"r\", \"q\"},";
+    // A physical switch block that's placed/wired backwards from every other one -- ORMS
+    // reads a 6th "true" element to flip which activate() boolean it sends for that one
+    // switch, while the two icons keep their normal meaning (first = deactivated look,
+    // second = activated look) for every other switch and for the GUI/pathfinding.
+    const TemplateSwitchInverted = "{y, x, \"z\", \"r\", \"q\", true},";
     const TemplateCrossing = "{y, x, \"z\", \"r\", \"q\"},";
     const TemplateSignal = "{y, x, \"z\", \"q\"},";
     const TemplateLabel = "{y, x, \"q\"},";
@@ -72,17 +77,21 @@ function convertToLua() {
                     StorageLable += Temp2 + '\n';
                 }
 
-                // Switch (e.g., "═ V ═ Vy1")
-                else if (cellText.charAt(2) === 'V') {
-                    let Temp = TemplateSwitch.replace("x", row);
+                // Switch (e.g., "═ V ═ Vy1"). "I" instead of "V" marks a switch whose
+                // physical block is inverted (see TemplateSwitchInverted above) -- same
+                // format otherwise, just a different marker character so the fixed
+                // character positions below don't need to change.
+                else if (cellText.charAt(2) === 'V' || cellText.charAt(2) === 'I') {
+                    const template = cellText.charAt(2) === 'I' ? TemplateSwitchInverted : TemplateSwitch;
+                    let Temp = template.replace("x", row);
                     Temp = Temp.replace("y", col);
-                    Temp = Temp.replace('z', cellText.charAt(0));  
+                    Temp = Temp.replace('z', cellText.charAt(0));
                     // First letter is type
 
-                    Temp = Temp.replace('r', cellText.charAt(4));  
+                    Temp = Temp.replace('r', cellText.charAt(4));
                     // Direction char
 
-                    Temp = Temp.replace("q", cellText.substring(6));  
+                    Temp = Temp.replace("q", cellText.substring(6));
                     // ID portion
 
                     StorageSwitches += Temp + '\n';

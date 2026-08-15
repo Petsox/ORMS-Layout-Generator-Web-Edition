@@ -71,8 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
             switch (text) {
 
                 // Insert preset symbols / text based on menu selection
-                case 'Vyhybka':
+                case 'Normální':
                     pasteTextIntoSelectedCell("═ V ═ Vy1Kr");
+                    break;
+
+                case 'Invertovaná':
+                    // "I" instead of "V" marks a switch whose physical block is placed
+                    // backwards from every other one -- ORMS flips which activate()
+                    // boolean it sends for just this switch (see help.html).
+                    pasteTextIntoSelectedCell("═ I ═ Vy1Kr");
                     break;
 
                 case 'Název Stanice':
@@ -105,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'Kolej':
                 case 'Zarážedla':
                 case 'Tunel':
+                case 'Vyhybka':
                     break;
 
                 // Default: paste the item's text itself
