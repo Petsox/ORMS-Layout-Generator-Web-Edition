@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'Přejezd':
                 case 'Návěstidlo':
                 case 'Kolej':
+                case 'Zarážedla':
                 case 'Tunel':
                     break;
 

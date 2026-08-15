@@ -119,7 +119,7 @@ function convertToLua() {
             }
 
             //Track segments
-            else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(cellText)) {
+            else if (["═", "╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗", "╠", "╣", "╦", "╩"].includes(cellText)) {
 
                 let trackSegment = cellText;  
                 // Starting symbol of the track
@@ -137,7 +137,7 @@ function convertToLua() {
                 if ((col + loop) < table.rows[row].cells.length) {
                     const nextCell = table.rows[row].cells[col + loop].textContent.trim();
 
-                    if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗"].includes(nextCell)) {
+                    if (["╗", "╝", "╚", "╔", "╥", "╨", "╡", "╞", "║", "︹", "︺", "⦘", "⦗", "╠", "╣", "╦", "╩"].includes(nextCell)) {
                         trackSegment += nextCell;
                         loop++;
                     }

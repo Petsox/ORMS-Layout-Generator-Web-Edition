@@ -10,17 +10,24 @@
     <div class="container">
         <h1>Pomocná Sekce</h1>
         <h2>Symboly:</h2>
-        <p>Pro tvorbu kolejí/výhybek používejte jen tyto symboly: ║ ═ ╔ ╗ ╚ ╝ ╡ ╞ ╧ ╤</p>
+        <p>Pro tvorbu kolejí/výhybek používejte jen tyto symboly: ║ ═ ╔ ╗ ╚ ╝</p>
+        <p>Pro křižovatky kolejí bez výhybky (kolej se větví, ale nejde přehodit) použijte: ╠ ╣ ╦ ╩</p>
+        <p>Pro zarážedla (konec koleje), samostatně v pravém menu pod "Zarážedla": ╡ ╞ ╨ ╥. Kolej z nich pokračuje jen na tu jednu otevřenou stranu, ne do všech směrů.</p>
         <p>Pro tvorbu Tunelů jen tyto symboly: ︹ ︺ ⦘ ⦗</p>
         <p>Pro tvorbu Přejezdů jen tyto symboly: ╪ ╫</p>
         <p>A pro směr Hlavních návěstidel tyto symboly: ◀ ▶ ▼ ▲</p>
-        <p>A pro směr Předvěstí tyto symboly: ◁ ▷ ▽ ◁</p>
-        <p>A pro směr Seřaďovacích návěstidel tyto symboly: < > ˅ ˄</p>
+        <p>A pro směr Předvěstí tyto symboly: ◁ ▷ ▽ △</p>
+        <p>A pro směr Seřaďovacích návěstidel tyto symboly: < > ˅ ˄ (případně i ˂ ˃, pokud by ˅ ˄ nešly napsat)</p>
         <h2>Pravidla a Konvence:</h2>
         <h4>Příklad: < N Pr1Skr</h4>
         <p>< označuje směr jízdy pro který návěstidlo platí, v tomto případě <─ (z prava do leva)</p>
         <p>Pr označuje předvěst. Tudíž se bude jednat o předvěst pro návěstidlo 1SKr</p>
         <p>Návěstidlo 1SKr označuje Vjezdové návěstidlo, No a tady končim páč ty predpisy neznám :)</p>
+        <h2>Speciální předpony názvů návěstidel:</h2>
+        <p>Kromě "Pr" (předvěst) a "Se" (seřaďovací) rozeznává ORMS ještě tyto předpony v názvu návěstidla:</p>
+        <p><strong>VS / VL</strong> -- Vložené návěstidlo. Používá se u stanic, kde více kolejí sdílí jedno odjezdové návěstidlo -- vložené návěstidlo označuje, na kterou konkrétní kolej se cesta staví.</p>
+        <p><strong>Sc / Lc</strong> -- Cestové návěstidlo (opakovač). Buď stojí samostatně jako odjezdové návěstidlo, nebo -- pokud po něm v postavené cestě následuje další hlavní návěstidlo -- opakuje jeho návěst s předponou "Opak" (např. "Volno" se zobrazí jako "OpakVolno").</p>
+        <p>Tyto předpony nic neovlivňují v samotném generátoru, jsou to jen konvence, které si musí uživatel dodržet ať to na straně ORMS funguje správně.</p>
     </div>
 </body>
 </html>
