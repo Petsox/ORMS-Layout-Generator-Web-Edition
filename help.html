@@ -28,6 +28,8 @@
         <p><strong>VS / VL</strong> -- Vložené návěstidlo. Používá se u stanic, kde více kolejí sdílí jedno odjezdové návěstidlo -- vložené návěstidlo označuje, na kterou konkrétní kolej se cesta staví.</p>
         <p><strong>Sc / Lc</strong> -- Cestové návěstidlo (opakovač). Buď stojí samostatně jako odjezdové návěstidlo, nebo -- pokud po něm v postavené cestě následuje další hlavní návěstidlo -- opakuje jeho návěst s předponou "Opak" (např. "Volno" se zobrazí jako "OpakVolno").</p>
         <p>Tyto předpony nic neovlivňují v samotném generátoru, jsou to jen konvence, které si musí uživatel dodržet ať to na straně ORMS funguje správně.</p>
+        <h2>Popisky (Labels):</h2>
+        <p><strong>Popisek nikdy neumisťujte doprostřed koleje tak, aby ji přerušil</strong> (typicky číslo koleje napsané do mezery uprostřed rovného úseku). ORMS s popisky při hledání cesty vůbec nepočítá -- taková mezera je pro program neprůchozí díra, i když trať na pohled vypadá spojitě, a cesta pak zbytečně objíždí přes výhybky, aby se přes ni dostala. Popisek dejte vždy vedle koleje (nad/pod ni), nikdy do jejího středu.</p>
     </div>
 </body>
 </html>
