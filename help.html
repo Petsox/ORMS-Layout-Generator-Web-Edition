@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,18 +19,21 @@
         <p>A pro směr Předvěstí tyto symboly: ◁ ▷ ▽ △</p>
         <p>A pro směr Seřaďovacích návěstidel tyto symboly: < > ˅ ˄ (případně i ˂ ˃, pokud by ˅ ˄ nešly napsat)</p>
         <h2>Pravidla a Konvence:</h2>
-        <h4>Příklad: < N Pr1Skr</h4>
-        <p>< označuje směr jízdy pro který návěstidlo platí, v tomto případě <─ (z prava do leva)</p>
-        <p>Pr označuje předvěst. Tudíž se bude jednat o předvěst pro návěstidlo 1SKr</p>
-        <p>Návěstidlo 1SKr označuje Vjezdové návěstidlo, No a tady končim páč ty predpisy neznám :)</p>
+        <h4>Příklad: ◀ N L1</h4>
+        <p>◀ označuje směr jízdy, pro který návěstidlo platí -- v tomto případě zprava doleva.</p>
+        <p>"N" je jen oddělovač formátu buňky (stejnou roli má "V"/"I" u výhybek nebo "P" u přejezdů) -- neznamená nic železničářského, jen říká generátoru, že jde o hlavní návěstidlo.</p>
+        <p>"L1" je název samotného návěstidla. V reálném provozu se vjezdová a odjezdová hlavní návěstidla obvykle značí písmenem "L" nebo "S" plus číslem koleje, pro kterou platí (např. "L1", "S3"): "L" pro směr jízdy od začátku trati (vlaky liché), "S" pro směr jízdy od konce trati (vlaky sudé) -- stejné pravidlo platí jak pro vjezdová, tak pro odjezdová návěstidla. Je to ale jen doporučená konvence pro přehlednost zápisu -- ORMS písmeno "L"/"S" v názvu nijak nekontroluje ani nevyžaduje, na rozdíl od předpon "Pr", "Se", "VS"/"VL" a "Sc"/"Lc" popsaných níže, které ORMS skutečně rozpoznává a podle kterých se řídí.</p>
+        <p>Výhybky i návěstidla se ve stanici obvykle číslují postupně ve směru od začátku trati ke konci trati (tedy podle rostoucí kilometrické polohy) -- výhybka s nejnižší kilometrickou polohou dostane nejnižší číslo; pokud jsou dvě výhybky ve stejné kilometrické poloze (rozvětvení), první se číslo přiděluje té vlevo. Koleje se číslují podobně: hlavní kolej má číslo 1 (na dvoukolejné trati 1 a 2), koleje vlevo (při pohledu směrem ke konci trati) dostávají lichá čísla (3, 5, 7, ...), koleje vpravo sudá čísla (2, 4, 6, ...).</p>
+        <p>Příklad předvěsti: ◁ N PrL1 -- ◁ je směr, "Pr" označuje předvěst (viz níže), "L1" je název návěstidla, kterému tahle předvěst patří.</p>
+        <p>Ani číslování výhybek/kolejí/návěstidel podle kilometráže, ani písmena "L"/"S", ani jakákoliv písmena z názvu stanice nejsou pro ORMS povinná -- jsou to jen doporučené konvence z reálného provozu pro čitelnost zápisu. ORMS ke správné funkci potřebuje jen správné symboly (viz výše) a předpony popsané v sekci níže; zbytek názvu návěstidla/výhybky/přejezdu si může uživatel zvolit libovolně.</p>
         <h2>Speciální předpony názvů návěstidel:</h2>
         <p>Kromě "Pr" (předvěst) a "Se" (seřaďovací) rozeznává ORMS ještě tyto předpony v názvu návěstidla:</p>
         <p><strong>VS / VL</strong> -- Vložené návěstidlo. Používá se u stanic, kde více kolejí sdílí jedno odjezdové návěstidlo -- vložené návěstidlo označuje, na kterou konkrétní kolej se cesta staví.</p>
         <p><strong>Sc / Lc</strong> -- Cestové návěstidlo (opakovač). Buď stojí samostatně jako odjezdové návěstidlo, nebo -- pokud po něm v postavené cestě následuje další hlavní návěstidlo -- opakuje jeho návěst s předponou "Opak" (např. "Volno" se zobrazí jako "OpakVolno").</p>
         <p>Tyto předpony nic neovlivňují v samotném generátoru, jsou to jen konvence, které si musí uživatel dodržet ať to na straně ORMS funguje správně.</p>
         <h2>Výhybky:</h2>
-        <p>Buňka výhybky má tvar <code>&lt;symbol1&gt; V &lt;symbol2&gt; &lt;název&gt;</code>, např. "═ V ╔ Vy1Kr" -- první symbol je vzhled ve vypnutém stavu, druhý symbol ve stavu zapnutém, "V" je jen oddělovač označující, že se jedná o výhybku (přes pravé menu "Vyhybka" &rarr; "Normální").</p>
-        <p>Pokud je fyzický blok výhybky ve světě otočený/zapojený obráceně oproti ostatním (po resetu/rebootu ORMS ukazuje GUI správný symbol, ale fyzicky je výhybka přehozená), použijte místo "V" oddělovač "I" (přes "Vyhybka" &rarr; "Invertovaná"), např. "═ I ╔ Vy1Kr". Symboly a jejich pořadí zůstávají stejné (první = vypnuto, druhý = zapnuto) -- "I" jen řekne ORMS, aby pro tuhle jednu výhybku poslal opačný povel, aby fyzický stav odpovídal tomu, co je vidět v GUI.</p>
+        <p>Buňka výhybky má tvar <code>&lt;symbol1&gt; V &lt;symbol2&gt; &lt;název&gt;</code>, např. "═ V ╔ Vy1" -- první symbol je vzhled ve vypnutém stavu, druhý symbol ve stavu zapnutém, "V" je jen oddělovač označující, že se jedná o výhybku (přes pravé menu "Vyhybka" &rarr; "Normální").</p>
+        <p>Pokud je fyzický blok výhybky ve světě otočený/zapojený obráceně oproti ostatním (po resetu/rebootu ORMS ukazuje GUI správný symbol, ale fyzicky je výhybka přehozená), použijte místo "V" oddělovač "I" (přes "Vyhybka" &rarr; "Invertovaná"), např. "═ I ╔ Vy1". Symboly a jejich pořadí zůstávají stejné (první = vypnuto, druhý = zapnuto) -- "I" jen řekne ORMS, aby pro tuhle jednu výhybku poslal opačný povel, aby fyzický stav odpovídal tomu, co je vidět v GUI.</p>
         <h2>Popisky (Labels):</h2>
         <p><strong>Popisek nikdy neumisťujte doprostřed koleje tak, aby ji přerušil</strong> (typicky číslo koleje napsané do mezery uprostřed rovného úseku). ORMS s popisky při hledání cesty vůbec nepočítá -- taková mezera je pro program neprůchozí díra, i když trať na pohled vypadá spojitě, a cesta pak zbytečně objíždí přes výhybky, aby se přes ni dostala. Popisek dejte vždy vedle koleje (nad/pod ni), nikdy do jejího středu.</p>
     </div>

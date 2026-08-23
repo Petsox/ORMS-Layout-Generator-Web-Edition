@@ -127,6 +127,7 @@ td:focus {
   border-radius: 5px;
   margin-bottom: 2px;
   padding: 0 5px 0 10px;
+  white-space: nowrap;
 }
 .content .item:hover{
   background: #f2f2f2;
@@ -148,7 +149,8 @@ td:focus {
 .share .share-menu{
   position: absolute;
   background: #fff;
-  width: 80px;
+  min-width: 80px;
+  width: max-content;
   right: -80px;
   top: -35px;
   padding: 13px;
@@ -157,9 +159,6 @@ td:focus {
   border-radius: 10px;
   box-shadow: 0 5px 10px rgba(0,0,0,0.08);
   transition: 0.2s ease;
-}
-#signals{
-  width: 160px;
 }
 .share:hover .share-menu{
   opacity: 1;

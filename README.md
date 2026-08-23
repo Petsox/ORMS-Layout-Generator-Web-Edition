@@ -15,5 +15,5 @@ Další tlačítko "Smazat vše" smaže veškerý obsah aktuálně zobrazené ta
 Sekce nápovědy ještě není zcela hotová z důvodu snahy o aplikování norem a předpisů, podle kterých se řídí reálná železnice a její infrastruktura. Tyto informace budou v průběhu času doplněny.
 Ohledně funkčnosti je zde malá chyba se zmodralými buňkami a to konkrétně, pokud uživatel táhne myší moc rychle, neoznačí se všechny buňky, přes které přejel.
 
-[here](https://petsox.github.io/ORMS-Layout-Generator-Web-Edition/)
+[Zde je ORMS volně přístupné](https://petsox.github.io/ORMS-Layout-Generator-Web-Edition/)
 

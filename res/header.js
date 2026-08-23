@@ -72,14 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Insert preset symbols / text based on menu selection
                 case 'Normální':
-                    pasteTextIntoSelectedCell("═ V ═ Vy1Kr");
+                    pasteTextIntoSelectedCell("═ V ═ Vy1");
                     break;
 
                 case 'Invertovaná':
                     // "I" instead of "V" marks a switch whose physical block is placed
                     // backwards from every other one -- ORMS flips which activate()
                     // boolean it sends for just this switch (see help.html).
-                    pasteTextIntoSelectedCell("═ I ═ Vy1Kr");
+                    pasteTextIntoSelectedCell("═ I ═ Vy1");
                     break;
 
                 case 'Název Stanice':
@@ -87,15 +87,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
 
                 case 'Hlavní':
-                    pasteTextIntoSelectedCell("◀ N S1Kr");
+                    pasteTextIntoSelectedCell("◀ N S1");
                     break;
 
                 case 'Předvěst':
-                    pasteTextIntoSelectedCell("◁ N PrS1Kr");
+                    pasteTextIntoSelectedCell("◁ N PrS1");
                     break;
                 case 'Seřaďovací':
                     // Handle click for "Návěstidlo - Seřaďovací"
-                    pasteTextIntoSelectedCell("< N Se1Kr")
+                    pasteTextIntoSelectedCell("< N Se1")
+                    break;
+
+                case 'Vložené':
+                    // "VS"/"VL" -- Vložené návěstidlo (viz help.html), zde příklad se "VL"
+                    pasteTextIntoSelectedCell("◀ N VL1");
+                    break;
+
+                case 'Cestové':
+                    // "Sc"/"Lc" -- Cestové návěstidlo / opakovač (viz help.html), zde příklad se "Lc"
+                    pasteTextIntoSelectedCell("◀ N Lc1");
                     break;
 
                 case '╪':
@@ -193,8 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get old/new values
 
             if (cell && lastChange) {
-                cell.textContent = lastChange.oldValue;  
-                // Restore original cell text
+                const cellDiv = cell.querySelector('div');
+                if (cellDiv) cellDiv.textContent = lastChange.oldValue;
+                // Restore original cell text (the editable <div> inside the cell, not the
+                // <td> itself -- td.textContent would wipe out that div and permanently
+                // break further editing/pasting on this cell)
 
                 delete cellChanges[lastChangeKey];  
                 // Remove the change from history
