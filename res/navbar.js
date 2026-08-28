@@ -9,8 +9,11 @@ document.getElementById('convertLuaButton').addEventListener('click', convertToL
 document.getElementById('saveCSVButton').addEventListener('click', saveToCSV);  
 // Save table into a CSV file
 
-document.getElementById('loadCSVButton').addEventListener('click', loadFromCSV);  
+document.getElementById('loadCSVButton').addEventListener('click', loadFromCSV);
 // Load CSV file into the grid
+
+document.getElementById('loadLuaButton').addEventListener('click', loadFromLua);
+// Load a LUA config file (as produced by convertToLua) back into the grid
 
 document.getElementById('deleteAllButton').addEventListener('click', deleteAllCells);  
 // Clear all cells
@@ -285,6 +288,114 @@ function loadFromCSV() {
 
     fileInput.click();  
     // Open file chooser
+}
+
+function loadFromLua() {
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.lua';
+    // Restrict file chooser to LUA
+
+    fileInput.addEventListener('change', (event) => {
+
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            parseLuaContent(e.target.result);
+        };
+
+        reader.readAsText(file);
+        // Read LUA file
+    });
+
+    fileInput.click();
+    // Open file chooser
+}
+
+// Parses a Config.* LUA table (the format written by convertToLua) and
+// rebuilds the grid from it. Each entry is "{col, row, ...fields},"; the
+// field layout per category mirrors the templates in convertToLua exactly.
+function parseLuaContent(content) {
+
+    deleteAllCells();
+    // Clear existing table first
+
+    content = content.replace(/\r\n/g, '\n');
+
+    // Matches "Config.<Name> = { ...entries... }" blocks
+    const sectionPattern = /Config\.(\w+)\s*=\s*\{([\s\S]*?)\n\s*\}/g;
+
+    // Matches a single "{col, row, "f1"[, "f2"][, "f3"][, true]}," entry
+    const entryPattern = /\{\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*(true))?\s*\}/g;
+
+    let sectionMatch;
+    while ((sectionMatch = sectionPattern.exec(content)) !== null) {
+
+        const sectionName = sectionMatch[1];
+        const sectionBody = sectionMatch[2];
+
+        entryPattern.lastIndex = 0;
+        let entryMatch;
+
+        while ((entryMatch = entryPattern.exec(sectionBody)) !== null) {
+
+            const col = parseInt(entryMatch[1], 10);
+            const row = parseInt(entryMatch[2], 10);
+            const f1 = entryMatch[3];
+            const f2 = entryMatch[4];
+            const f3 = entryMatch[5];
+            const inverted = entryMatch[6] === 'true';
+
+            if (row < 0 || row >= numRows || col < 0 || col >= numCols) continue;
+            // Skip out-of-range coordinates rather than crashing on a hand-edited file
+
+            switch (sectionName) {
+
+                case 'Tracks':
+                    // f1 is the track symbol run, one character per cell
+                    placeTrackSegment(row, col, f1);
+                    break;
+
+                case 'Switches':
+                    // f1: type, f2: direction char, f3: id, inverted -> "I" marker
+                    setCellText(row, col, `${f1} ${inverted ? 'I' : 'V'} ${f2} ${f3}`);
+                    break;
+
+                case 'Signals':
+                    // f1: signal id, f2: symbol
+                    setCellText(row, col, `${f2} N ${f1}`);
+                    break;
+
+                case 'Crossings':
+                    // f1: symbol, f2: orientation, f3: id
+                    setCellText(row, col, `${f1} P ${f2} ${f3}`);
+                    break;
+
+                case 'Labels':
+                    // f1: label text
+                    setCellText(row, col, `L ${f1}`);
+                    break;
+            }
+        }
+    }
+}
+
+function setCellText(row, col, text) {
+    const cell = table.rows[row] && table.rows[row].cells[col];
+    if (!cell) return;
+
+    const div = cell.querySelector('div');
+    if (div) div.textContent = text;
+}
+
+function placeTrackSegment(row, col, segment) {
+    for (let i = 0; i < segment.length && col + i < numCols; i++) {
+        setCellText(row, col + i, segment[i]);
+    }
 }
 
 function deleteAllCells() {
