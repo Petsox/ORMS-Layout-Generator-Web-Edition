@@ -94,6 +94,9 @@ export function parseLua(content) {
 /** Reads a CSV project of the first version ("null" = empty cell, every value followed by a comma). */
 export function parseCSV(content) {
     content = content.replace(/^﻿/, '');
+    // the generator always wrote commas; a file re-saved in a Czech Excel uses semicolons
+    const firstLine = content.slice(0, content.search(/\r|\n|$/));
+    const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
     const rows = [];
     let row = [], field = '', quoted = false;
     for (let i = 0; i < content.length; i++) {
@@ -103,7 +106,7 @@ export function parseCSV(content) {
                 if (content[i + 1] === '"') { field += '"'; i++; } else quoted = false;
             } else field += ch;
         } else if (ch === '"' && field === '') quoted = true;
-        else if (ch === ',') { row.push(field); field = ''; }
+        else if (ch === sep) { row.push(field); field = ''; }
         else if (ch === '\n' || ch === '\r') {
             if (ch === '\r' && content[i + 1] === '\n') i++;
             row.push(field); rows.push(row); row = []; field = '';
