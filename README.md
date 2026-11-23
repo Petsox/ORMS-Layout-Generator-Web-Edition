@@ -11,7 +11,7 @@
 - **Kontrola** běžící při každé změně: špatné formáty, výhybky bez hrotu, dvojí názvy, díry v kolejích, popisky v koleji, popisky, které v ORMS zakryjí sousední prvky, předvěsti bez hlavního návěstidla a další. Chybné buňky jsou v mřížce označené, klik na hlášení je ukáže.
 - **Náhled OpenComputers**: obrazovka vykreslená stejně jako ORMS (barvy, umístění názvů, popisky, nadpis a tlačítka), se simulací přehazování výhybek a přejezdů.
 - **Automatické centrování**: při exportu se kolejiště posune doprostřed obrazovky, nezůstane nalepené v rohu.
-- Export do `config.lua` (stejný formát jako dřív), načtení `.lua` i `.csv` (i přetažením souboru), export stanice pro SignalCraft (EMZZ).
+- Ukládání rovnou do `.lua` (zadání názvu a výběr místa uložení), stejný formát `config.lua` jako dřív. Otevření `.lua` i starých `.csv` (i přetažením souboru), export stanice pro SignalCraft (EMZZ).
 - Zpět/znovu pro všechny úpravy, kopírování a vkládání oblastí (kompatibilní s Excelem), vyplňování tažením za roh výběru, zoom, světlý i tmavý vzhled, průběžné ukládání v prohlížeči.
 
 Aplikace nepoužívá žádné externí knihovny a nepotřebuje sestavení, stačí otevřít `index.html` přes webový server (např. GitHub Pages). Podrobný popis symbolů, formátů a pravidel je v [nápovědě](help.html).

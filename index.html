@@ -20,7 +20,7 @@
             <div class="tgroup" role="group" aria-label="Soubor">
                 <button class="tb" data-action="new" data-icon="filePlus" title="Nové kolejiště">Nový</button>
                 <button class="tb" data-action="open" data-icon="folder" title="Otevřít .csv nebo .lua (Ctrl+O)">Otevřít</button>
-                <button class="tb" data-action="save" data-icon="save" title="Uložit projekt jako .csv (Ctrl+S)">Uložit</button>
+                <button class="tb" data-action="save" data-icon="save" title="Uložit kolejiště jako .lua (Ctrl+S)">Uložit</button>
             </div>
             <div class="tgroup" role="group" aria-label="Historie">
                 <button class="tb icon" data-action="undo" data-icon="undo" title="Zpět (Ctrl+Z)" aria-label="Zpět"></button>
@@ -155,7 +155,7 @@
     <div class="dlg-body">
         <div id="luaStatus"></div>
         <ol class="steps">
-            <li>Zkopírujte kód nebo stáhněte soubor <code>config.lua</code>.</li>
+            <li>Zkopírujte kód nebo ho uložte jako <code>config.lua</code>.</li>
             <li>V OpenComputers nahraďte obsah souboru <code>config.lua</code> v adresáři ORMS (např. <code>edit config.lua</code>).</li>
             <li>Spusťte ORMS znovu.</li>
         </ol>
@@ -165,8 +165,31 @@
     <footer class="dlg-foot">
         <span class="muted" id="luaSize"></span>
         <button class="btn" id="luaCopy" data-icon="copy" autofocus>Kopírovat</button>
-        <button class="btn primary" id="luaDownload" data-icon="download">Stáhnout config.lua</button>
+        <button class="btn primary" id="luaDownload" data-icon="save">Uložit…</button>
     </footer>
+</dialog>
+
+<!-- save as .lua -->
+<dialog class="dlg narrow" id="saveDialog" aria-labelledby="saveTitle">
+    <form method="dialog" id="saveForm">
+        <header class="dlg-head">
+            <h2 id="saveTitle">Uložit kolejiště</h2>
+            <button class="x" type="button" data-close aria-label="Zavřít" title="Zavřít (Esc)">&times;</button>
+        </header>
+        <div class="dlg-body">
+            <label class="field">Název souboru
+                <span class="name-row"><input id="saveName" type="text" autocomplete="off" spellcheck="false" required autofocus><span class="ext">.lua</span></span>
+                <small>Pro ORMS se soubor musí jmenovat <code>config.lua</code>. Jiný název se hodí pro zálohy, otevřete ho tlačítkem Otevřít.</small>
+            </label>
+            <div id="saveStatus"></div>
+            <p class="muted small" id="saveWhere"></p>
+        </div>
+        <footer class="dlg-foot">
+            <span class="grow"></span>
+            <button class="btn" type="button" data-close>Zrušit</button>
+            <button class="btn primary" type="submit" data-icon="save">Uložit…</button>
+        </footer>
+    </form>
 </dialog>
 
 <!-- SignalCraft export -->
@@ -225,7 +248,7 @@
             <tr><td><kbd>Esc</kbd></td><td>návrat k nástroji Výběr</td></tr>
             <tr><td>držení kolečka myši + tažení</td><td>posun po kolejišti (i v náhledu)</td></tr>
             <tr><td><kbd>Ctrl</kbd>+kolečko</td><td>zoom mřížky</td></tr>
-            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>uložit .csv / otevřít soubor</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>uložit .lua / otevřít soubor</td></tr>
             <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>export Lua</td></tr>
             <tr><td><kbd>F1</kbd></td><td>nápověda</td></tr>
         </table>

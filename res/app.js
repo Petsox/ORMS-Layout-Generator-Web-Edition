@@ -6,7 +6,7 @@ import {
     DIR_ARROW, DIR_NAME, TRACK_DIRS, byteLength,
 } from './cells.js';
 import { validate } from './validate.js';
-import { gridToConfig, configToLua, parseLua, toCSV, parseCSV, download } from './lua.js';
+import { gridToConfig, configToLua, parseLua, parseCSV, download } from './lua.js';
 import { buildScreen, paintScreen, centerOffset, switchLabel, signalLabel, COLORS, SCREEN_W, SCREEN_H } from './orms-render.js';
 import { initSignalCraft } from './signalcraft-ui.js';
 import { DEMO_LUA } from './demo.js';
@@ -78,7 +78,7 @@ const grid = new Grid();
 let check = { issues: [], stats: {}, parsed: [] };
 let offset = { dx: 0, dy: 0 };
 let scMarks = new Map();
-let projectName = store.get('projectName', 'kolejiste');
+let projectName = store.get('projectName', 'config');
 
 function nextName(prefix, prev) {
     let max = 0;
@@ -177,14 +177,11 @@ const actions = {
     new() {
         if (grid.isEmpty()) return;
         grid.clear('Nové kolejiště');
-        projectName = 'kolejiste'; store.set('projectName', projectName);
+        projectName = 'config'; store.set('projectName', projectName);
         toast('Kolejiště vymazáno', { action: { label: 'Vrátit', fn: () => grid.undo() } });
     },
     open() { $('#fileInput').value = ''; $('#fileInput').click(); },
-    save() {
-        download(projectName + '.csv', toCSV(grid.cells), 'text/csv;charset=utf-8');
-        toast(`Uloženo jako ${projectName}.csv`);
-    },
+    save: () => openSaveDialog(),
     undo() { const l = grid.undo(); if (l) toast('Zpět: ' + l); },
     redo() { const l = grid.redo(); if (l) toast('Znovu: ' + l); },
     lua: openLuaDialog,
@@ -242,7 +239,7 @@ function openFile(file) {
             } else {
                 loadTexts(parseCSV(text), `Načteno z ${file.name}`);
             }
-            projectName = file.name.replace(/\.(csv|lua|txt)$/i, '') || 'kolejiste';
+            projectName = file.name.replace(/\.(csv|lua|txt)$/i, '') || 'config';
             store.set('projectName', projectName);
         } catch (err) {
             toast('Soubor se nepodařilo načíst: ' + err.message, { error: true });
@@ -507,7 +504,7 @@ function renderInspector(force = false) {
     }
     if (c.kind !== 'empty') {
         html += `<label class="field">Text buňky <input type="text" class="mono" data-f="raw" value="${esc(text)}" autocomplete="off" spellcheck="false">
-            <small>Tak, jak se uloží do CSV. Enter potvrdí.</small></label>
+            <small>Přesně tak, jak je v buňce zapsaný. Enter potvrdí.</small></label>
             <div class="btn-row"><button class="btn danger" data-ins="clear" data-icon="trash">Smazat buňku</button></div>`;
     }
     panel.innerHTML = html;
@@ -841,7 +838,66 @@ $('#luaCopy').addEventListener('click', async () => {
         toast('Kód je označený, zkopírujte ho Ctrl+C');
     }
 });
-$('#luaDownload').addEventListener('click', () => download('config.lua', luaText, 'text/plain;charset=utf-8'));
+$('#luaDownload').addEventListener('click', () => openSaveDialog());
+
+// ------------------------------------------------------------------ save as .lua: first the name, then where
+const saveDlg = $('#saveDialog');
+function openSaveDialog() {
+    if (luaDlg.open) luaDlg.close();
+    recompute();
+    $('#saveName').value = projectName;
+    const n = { error: 0, warn: 0 };
+    for (const i of check.issues) if (n[i.level] !== undefined) n[i.level]++;
+    const notes = [];
+    if (!check.stats.cells) notes.push('<div class="banner warn">Kolejiště je prázdné.</div>');
+    else if (n.error) notes.push(`<div class="banner error">Kolejiště má ${plural(n.error, 'chybu', 'chyby', 'chyb')}, ORMS nemusí fungovat správně.</div>`);
+    if (check.stats.invalid) {
+        notes.push(`<p class="note warn">${plural(check.stats.invalid, 'buňka', 'buňky', 'buněk')} s neplatným obsahem se do .lua neuloží.</p>`);
+    }
+    if (settings.center && (offset.dx || offset.dy)) {
+        notes.push('<p class="note info">Kolejiště se uloží vycentrované na obrazovce (auto-centrování). Po otevření bude v mřížce posunuté.</p>');
+    }
+    $('#saveStatus').innerHTML = notes.join('');
+    $('#saveWhere').textContent = window.showSaveFilePicker
+        ? 'Po potvrzení se otevře okno pro výběr místa uložení.'
+        : 'Tento prohlížeč neumí vybrat místo uložení, soubor se uloží do složky Stažené soubory.';
+    saveDlg.showModal();
+    $('#saveName').select();
+}
+$('#saveForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    let name = $('#saveName').value.trim().replace(/\.lua$/i, '').replace(/[\\/:*?"<>|]+/g, '_') || 'config';
+    saveDlg.close();
+    const text = configToLua(gridToConfig(grid.cells, offset));
+    const file = name + '.lua';
+    if (window.showSaveFilePicker) {
+        let handle;
+        try {
+            handle = await window.showSaveFilePicker({
+                suggestedName: file,
+                types: [{ description: 'Konfigurace ORMS (Lua)', accept: { 'text/plain': ['.lua'] } }],
+            });
+        } catch (err) {
+            if (err.name !== 'AbortError') toast('Okno pro uložení nejde otevřít: ' + err.message, { error: true });
+            return;
+        }
+        try {
+            const w = await handle.createWritable();
+            await w.write(text);
+            await w.close();
+        } catch (err) {
+            toast('Soubor se nepodařilo uložit: ' + err.message, { error: true });
+            return;
+        }
+        name = handle.name.replace(/\.lua$/i, '');
+        toast('Uloženo do ' + handle.name);
+    } else {
+        download(file, text, 'text/plain;charset=utf-8');
+        toast('Uloženo jako ' + file);
+    }
+    projectName = name;
+    store.set('projectName', projectName);
+});
 
 // generic dialog close buttons and backdrop click
 for (const d of document.querySelectorAll('dialog')) {

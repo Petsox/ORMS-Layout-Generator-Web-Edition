@@ -47,7 +47,7 @@
                 <li><b>Opravte problémy.</b> Panel <span class="ui">Kontrola</span> průběžně hlídá chyby. Buňky s problémem mají v rohu červený nebo žlutý trojúhelník, klik na hlášení buňku ukáže.</li>
                 <li><b>Zkontrolujte náhled</b> obrazovky OpenComputers pod editorem a dejte <span class="ui">Export Lua</span>.</li>
             </ol>
-            <p>Rozpracované kolejiště se průběžně ukládá v prohlížeči. Pro zálohu nebo přenos na jiný počítač použijte <span class="ui">Uložit</span> (soubor .csv).</p>
+            <p>Rozpracované kolejiště se průběžně ukládá v prohlížeči. Tlačítkem <span class="ui">Uložit</span> kolejiště uložíte rovnou jako soubor <code>.lua</code> pro ORMS: nejdřív zadáte název, pak vyberete, kam se má uložit.</p>
         </section>
 
         <section id="editor">
@@ -71,7 +71,7 @@
                 <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>zpět a znovu (funguje pro všechny úpravy včetně načtení souboru)</td></tr>
                 <tr><td>držení kolečka myši + tažení</td><td>posun po kolejišti, funguje v editoru i v náhledu</td></tr>
                 <tr><td><kbd>Ctrl</kbd>+kolečko, tlačítka −/+ dole</td><td>zoom mřížky</td></tr>
-                <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>O</kbd>, <kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>uložit .csv, otevřít soubor, export Lua</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>O</kbd>, <kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>uložit .lua, otevřít soubor, náhled exportu Lua</td></tr>
                 <tr><td>pravé tlačítko</td><td>místní nabídka (schránka, rychlé vložení prvku, ukázat v náhledu)</td></tr>
             </table>
             <p>Souřadnice v záhlaví mřížky (X sloupec, Y řádek) jsou přesně ty, které se zapíší do <code>config.lua</code>, pokud je vypnuté automatické centrování.</p>
@@ -171,7 +171,8 @@
             <h2>Export, import a soubory</h2>
             <dl class="defs">
                 <dt>Export Lua</dt><dd>Vytvoří obsah <code>config.lua</code> pro ORMS (Config.Signals, Tracks, Switches, Crossings, Labels). Kód zkopírujete nebo stáhnete jako soubor; v OpenComputers jím nahraďte <code>config.lua</code> v adresáři ORMS. Formát je stejný jako v první verzi generátoru.</dd>
-                <dt>Uložit / Otevřít .csv</dt><dd>Projekt v tabulce 160 × 50 (prázdná buňka = <code>null</code>), kompatibilní s první verzí. Text s čárkou se nově uloží v uvozovkách.</dd>
+                <dt>Uložit</dt><dd>Zeptá se na název souboru (pro ORMS <code>config.lua</code>) a pak otevře okno pro výběr místa uložení. V prohlížečích, které výběr místa neumí (Firefox, Safari), se soubor uloží do Stažených souborů. Buňky s neplatným obsahem se do .lua neuloží, dialog na ně upozorní. Se zapnutým auto-centrováním se uloží vycentrované souřadnice.</dd>
+                <dt>Otevřít .csv</dt><dd>Projekty z první verze generátoru (.csv) jde pořád otevřít.</dd>
                 <dt>Otevřít .lua</dt><dd>Načte existující <code>config.lua</code> zpátky do mřížky. Soubor lze také přetáhnout myší do okna.</dd>
                 <dt>Nový</dt><dd>Vymaže mřížku. Jde to vrátit přes <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</dd>
             </dl>

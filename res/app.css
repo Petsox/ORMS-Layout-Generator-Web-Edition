@@ -448,6 +448,12 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
     width: min(760px, calc(100vw - 32px)); max-height: min(88vh, 940px); padding: 0; border: none; border-radius: 12px;
     background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg);
 }
+.dlg.narrow { width: min(480px, calc(100vw - 32px)); }
+.dlg form { display: contents; }
+.name-row { display: flex; align-items: center; gap: 6px; }
+.name-row input { flex: 1; font-family: var(--mono); }
+.name-row .ext { font: 13px var(--mono); color: var(--muted); }
+.small { font-size: 12px; margin: 8px 0 0; }
 .dlg.wide { width: min(860px, calc(100vw - 32px)); }
 .dlg[open] { display: flex; flex-direction: column; }
 .dlg::backdrop { background: rgba(10, 14, 22, .5); }

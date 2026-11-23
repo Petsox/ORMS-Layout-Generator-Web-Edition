@@ -1,4 +1,4 @@
-// Lua config for ORMS (config.lua) and CSV project files.
+// Lua config for ORMS (config.lua); reading CSV projects of the first version.
 //
 // gridToConfig() reads the grid exactly like the original "Převést do LUA" button did (fixed
 // character positions, horizontal runs of track glyphs), so the output is byte-for-byte the same
@@ -91,14 +91,7 @@ export function parseLua(content) {
     return { texts, count, outside };
 }
 
-/** CSV in the format of the original generator ("null" = empty cell, every value followed by a comma). */
-export function toCSV(texts) {
-    return texts.map(row => row.map(t => {
-        if (!t) return 'null,';
-        return (/[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t) + ',';
-    }).join('') + '\n').join('');
-}
-
+/** Reads a CSV project of the first version ("null" = empty cell, every value followed by a comma). */
 export function parseCSV(content) {
     content = content.replace(/^﻿/, '');
     const rows = [];
