@@ -1,19 +1,19 @@
-[ORMS](https://github.com/Petsox/Open-Rail-Management-System) Layout Generator Web Edition je webová aplikace sloužící pro tvorbu virtuálních kolejišť kompatibilních s programem [ORMS](https://github.com/Petsox/Open-Rail-Management-System) pro mod [OpenComputers](https://github.com/MightyPirates/OpenComputers) do hry Minecraft.
+[ORMS](https://github.com/Petsox/Open-Rail-Management-System) Layout Generator Web Edition je webová aplikace pro tvorbu virtuálních kolejišť pro program [ORMS](https://github.com/Petsox/Open-Rail-Management-System) v modu [OpenComputers](https://github.com/MightyPirates/OpenComputers) do hry Minecraft.
 
-Cílem této aplikace je zjednodušit proces tvoření a vkládání kolejišť do hry. Pro vytvoření nebyla použita žádná externí knihovna, nýbrž pouze umělá inteligence pro tvorbu komentářů, úpravu a zefektivění kódu.
+![Kolejiště v ORMS ve hře](res/orms-in-game.png)
 
-Pro zlehčení jsou zde takzvané QoL (Quality of Life) funkce. Jedna z nich je upravené "context menu," což je menu, které se zobrazí po stisknutí pravého tlačítka myši.
-V něm jsou všechny důležité znaky nebo sekvence znaků, které mají speciální využití. V sekci "Nápověda" jsou podrobněji popsána pravidla a konvence zápisu pro správné fungování aplikace.
-Další funkcí je, že aplikace dokáže vrátit kroky uživatele pomocí standardní klávesové zkratky "CTRL + Z".
-Užitečná funkce vypůjčená z programu Excel se týká toho, když uživatel najede na pravý spodní roh jakékoliv buňky, tak se u kurzoru myši objeví malé "+".
-Když bude uživatel držet levé tlačítko myši a táhne myší, tak se buňky, přes které táhl, zabarvý modře. Jakmile uživatel tlačítko pustí, do zmodralých buňek se zkopíruje obsah původní buňky (toto funguje ve všech směrech najednou).
+## Verze 2
 
-V navigačním panelu v hlavičce aplikace jsou tlačítka s funkcemi, které lze považovat za nedílnou součástí aplikace. Nejdůležitější tlačítko "Převést do LUA" slouží k samotnému převodu kódu do tvaru pro [ORMS](https://github.com/Petsox/Open-Rail-Management-System).
-Další dvojice tlačítek "Uložit" a "Načíst" se týkají nahraní nebo načtení ze souboru .csv.
-Další tlačítko "Smazat vše" smaže veškerý obsah aktuálně zobrazené tabulky nikoliv načteného / uloženého souboru. Poslední tlačítko "Nápověda" otevře podstránku s nápovědou a pravidly pro správné zacházení s aplikací.
+- **Editor kolejiště** s mřížkou 160 × 50 (přesně jako obrazovka ORMS), která kolejiště kreslí jako schéma: koleje, výhybky v obou polohách, návěstidla barevně podle druhu, popisky.
+- **Nástroj Kolej**: trať se kreslí tažením myši, oblouky a výhybky (včetně hrotu) se doplní samy. Dále štětec a guma.
+- **Paleta** se všemi symboly a prvky, názvy se číslují automaticky (Vy1, S1, PrS1, Se1, P1 …).
+- **Panel Buňka**: vlastnosti vybraného prvku (poloha výhybky, invertovaná, druh a směr návěstidla, název), takže formát buňky není potřeba psát ručně.
+- **Kontrola** běžící při každé změně: špatné formáty, výhybky bez hrotu, dvojí názvy, díry v kolejích, popisky v koleji, popisky, které v ORMS zakryjí sousední prvky, předvěsti bez hlavního návěstidla a další. Chybné buňky jsou v mřížce označené, klik na hlášení je ukáže.
+- **Náhled OpenComputers**: obrazovka vykreslená stejně jako ORMS (barvy, umístění názvů, popisky, nadpis a tlačítka), se simulací přehazování výhybek a přejezdů.
+- **Automatické centrování**: při exportu se kolejiště posune doprostřed obrazovky, nezůstane nalepené v rohu.
+- Export do `config.lua` (stejný formát jako dřív), načtení `.lua` i `.csv` (i přetažením souboru), export stanice pro SignalCraft (EMZZ).
+- Zpět/znovu pro všechny úpravy, kopírování a vkládání oblastí (kompatibilní s Excelem), vyplňování tažením za roh výběru, zoom, světlý i tmavý vzhled, průběžné ukládání v prohlížeči.
 
-Sekce nápovědy ještě není zcela hotová z důvodu snahy o aplikování norem a předpisů, podle kterých se řídí reálná železnice a její infrastruktura. Tyto informace budou v průběhu času doplněny.
-Ohledně funkčnosti je zde malá chyba se zmodralými buňkami a to konkrétně, pokud uživatel táhne myší moc rychle, neoznačí se všechny buňky, přes které přejel.
+Aplikace nepoužívá žádné externí knihovny a nepotřebuje sestavení, stačí otevřít `index.html` přes webový server (např. GitHub Pages). Podrobný popis symbolů, formátů a pravidel je v [nápovědě](help.html).
 
-[Zde je ORMS volně přístupné](https://petsox.github.io/ORMS-Layout-Generator-Web-Edition/)
-
+[Zde je ORMS Layout Generator volně přístupný](https://petsox.github.io/ORMS-Layout-Generator-Web-Edition/)
