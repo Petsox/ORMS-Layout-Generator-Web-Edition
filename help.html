@@ -18,6 +18,17 @@
         <p>A pro směr Hlavních návěstidel tyto symboly: ◀ ▶ ▼ ▲</p>
         <p>A pro směr Předvěstí tyto symboly: ◁ ▷ ▽ △</p>
         <p>A pro směr Seřaďovacích návěstidel tyto symboly: < > ˅ ˄ (případně i ˂ ˃, pokud by ˅ ˄ nešly napsat)</p>
+
+        <h2>Export do SignalCraftu (EMZZ):</h2>
+        <p>Tlačítko "Export do SignalCraftu" zkontroluje kolejiště a vytvoří soubor stanice pro elektromechanické zabezpečovací zařízení v modu SignalCraft. Soubor se vloží do přístroje v dopravní kanceláři, ke kterému se pak SignalBonderem připojí přístroje stavědel.</p>
+        <p><b>Stavědla:</b> popisek "L ST1", "L ST2" ... dejte ke zhlaví, které stavědlo obsluhuje. Výhybky, návěstidla a přejezdy patří k tomu stavědlu, ke kterému mají nejblíž po kolejích.</p>
+        <p><b>Tratě:</b> k volnému konci koleje, kudy vede trať do sousední stanice, dejte popisek "L T1 Jméno stanice" (např. "L T1 Kamenice").</p>
+        <p><b>Dopravní koleje:</b> číslo koleje jako popisek nad kolejí (např. "L 1", "L K. 3", "L Kolej 5a"). Na tyto koleje vedou vjezdové cesty.</p>
+        <p><b>Přejezdy:</b> přejezd přes více kolejí nakreslete na každou kolej se stejným názvem (např. "P4" nad sebou). Bere se jako jeden přejezd přes všechny tyto koleje.</p>
+        <p><b>Cestová a skupinová návěstidla</b> (Sc, Lc): odjezdová vlaková cesta může začínat u cestového návěstidla na konci koleje a vést přes skupinové odjezdové návěstidlo (např. Sc2 → S2 → trať). Hlavní návěstidla, která cesta míjí ve svém směru, se rozsvítí také; cestové návěstidlo opakuje návěst dalšího hlavního návěstidla (Opak.). Skupinové návěstidlo mezi výhybkami pak samo vlakové cesty nemá. K míjeným návěstidlům je vhodné dát detektor, aby zhasla po průjezdu vlaku.</p>
+        <p><b>Vlakové cesty</b> se dopočítají samy: od vjezdového návěstidla na každou dopravní kolej, kam se dá dojet, a od odjezdového návěstidla na každou trať. Vjezdové je návěstidlo, za kterým (proti jeho směru) je bez výhybky rovnou trať.</p>
+        <p><b>Kontrola</b> hledá díry v kolejích, popisky v koleji, výhybky bez právě jednoho společného konce (hrotu), návěstidla mimo kolej, dvojí názvy, prvky bez stavědla a tratě bez cest. Chybné buňky se v tabulce podbarví červeně, upozornění žlutě.</p>
+        <p>Pevná rozvětvení ╠ ╣ ╦ ╩ export nepřijme: v EMZZ se přes ně nedá postavit cesta, nahraďte je výhybkou.</p>
         <h2>Pravidla a Konvence:</h2>
         <h4>Příklad: ◀ N L1</h4>
         <p>◀ označuje směr jízdy, pro který návěstidlo platí -- v tomto případě zprava doleva.</p>

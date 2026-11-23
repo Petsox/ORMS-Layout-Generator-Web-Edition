@@ -164,3 +164,72 @@ td:focus {
   opacity: 1;
   pointer-events: auto;
 }
+/* export do SignalCraftu */
+td.sc-chyba { background-color: #f6b4b4; }
+td.sc-varovani { background-color: #f8e3a6; }
+td.sc-blik { animation: sc-blik 1.6s ease-out 2; }
+@keyframes sc-blik { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 4px #2f6fdb inset; } }
+
+.sc-dialog {
+    width: min(760px, calc(100vw - 32px)); max-height: min(86vh, 900px);
+    border: none; border-radius: 10px; padding: 0; margin: auto;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .35); color: #222; background: #fff;
+    display: none; flex-direction: column; overflow: hidden;
+}
+.sc-dialog[open] { display: flex; }
+.sc-dialog::backdrop { background: rgba(20, 20, 20, .45); }
+
+.sc-hlava { display: flex; align-items: center; gap: 12px; background: #333; color: #fff; padding: 12px 12px 12px 20px; }
+.sc-hlava h2 { font-size: 17px; font-weight: 600; margin: 0; flex: 1; }
+.sc-zavrit { width: 34px; height: 34px; border: none; border-radius: 6px; background: transparent; color: #ddd;
+    font-size: 26px; line-height: 1; cursor: pointer; }
+.sc-zavrit:hover { background: #555; color: #fff; }
+.sc-zavrit:focus-visible, .sc-tl:focus-visible, .sc-poloha:focus-visible { outline: 2px solid #2f6fdb; outline-offset: 2px; }
+
+.sc-telo { padding: 16px 20px; overflow: auto; flex: 1; font-size: 14px; }
+.sc-radek { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.sc-nazev { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555; flex: 1; min-width: 200px; }
+.sc-nazev input { font-size: 15px; padding: 7px 10px; border: 1px solid #bbb; border-radius: 6px; width: 100%; color: #222; }
+.sc-nazev input:focus { outline: none; border-color: #2f6fdb; box-shadow: 0 0 0 3px rgba(47, 111, 219, .2); }
+
+.sc-tl { background: #555; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+.sc-tl:hover { background: #777; }
+.sc-tl.sc-hlavni { background: #1d7a34; }
+.sc-tl.sc-hlavni:hover { background: #239140; }
+.sc-tl:disabled { background: #bbb; cursor: default; }
+
+.sc-napoveda { margin: 12px 0 4px; font-size: 13px; color: #444; }
+.sc-napoveda summary { cursor: pointer; color: #2f6fdb; width: max-content; }
+.sc-napoveda ul { margin: 6px 0 0; padding-left: 20px; }
+.sc-napoveda li { margin: 3px 0; }
+
+.sc-souhrn { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; padding: 10px 14px; border-radius: 8px; font-weight: 600; }
+.sc-souhrn.ok { background: #e6f4ea; color: #1d6b30; }
+.sc-souhrn.chyba { background: #fdeaea; color: #a51d1d; }
+.sc-cisla { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.sc-cislo { background: #f1f1f1; border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+.sc-cislo b { font-size: 16px; margin-right: 4px; }
+
+.sc-sekce { margin-top: 16px; }
+.sc-sekce h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+.sc-pocet { font-size: 12px; font-weight: 600; border-radius: 10px; padding: 1px 8px; color: #fff; }
+.sc-sekce.chyba .sc-pocet { background: #b01818; }
+.sc-sekce.varovani .sc-pocet { background: #a87200; }
+.sc-hlasky { list-style: none; margin: 0; padding: 0; border: 1px solid #e3e3e3; border-radius: 8px; overflow: hidden; }
+.sc-hlasky li { display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-top: 1px solid #eee; font-size: 13px; line-height: 1.4; }
+.sc-hlasky li:first-child { border-top: none; }
+.sc-sekce.chyba li { border-left: 4px solid #d23b3b; }
+.sc-sekce.varovani li { border-left: 4px solid #e0a400; }
+.sc-poloha { flex: none; font: 12px ui-monospace, Consolas, monospace; background: #eef2fb; color: #2f5fb3;
+    border: 1px solid #cfdaf3; border-radius: 4px; padding: 1px 6px; cursor: pointer; white-space: nowrap; }
+.sc-poloha:hover { background: #dbe5fa; }
+.sc-bez { flex: none; width: 0; }
+
+.sc-stavedla { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.sc-st { border: 1px solid #e3e3e3; border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.sc-st h4 { margin: 0 0 4px; font-size: 14px; }
+.sc-st p { margin: 2px 0; color: #444; }
+.sc-st .sc-druh { color: #777; }
+
+.sc-pata { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-top: 1px solid #e3e3e3; background: #fafafa; }
+.sc-stav { flex: 1; font-size: 13px; color: #666; }

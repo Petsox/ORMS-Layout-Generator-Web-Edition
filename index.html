@@ -12,6 +12,7 @@
         <div class="brand"> Vybraná buňka: X: 0, Y: 0</div>
         <div class="navbar-buttons">
             <button id="convertLuaButton" class="button">Převést do LUA</button>
+            <button id="signalcraftButton" class="button">Export do SignalCraftu</button>
             <button id="saveCSVButton" class="button">Uložit do .csv</button>
             <button id="loadCSVButton" class="button">Načíst z .csv</button>
             <button id="loadLuaButton" class="button">Načíst z .lua</button>
@@ -157,7 +158,34 @@
             </ul>
         </div>
     </div>
+    <dialog id="scDialog" class="sc-dialog" aria-labelledby="scTitulek">
+        <header class="sc-hlava">
+            <h2 id="scTitulek">Export do SignalCraftu</h2>
+            <button id="scZavrit" class="sc-zavrit" type="button" title="Zavřít (Esc)" aria-label="Zavřít">&times;</button>
+        </header>
+        <div class="sc-telo">
+            <div class="sc-radek">
+                <label class="sc-nazev">Název stanice <input id="scNazev" type="text" value="Stanice" autocomplete="off" autofocus></label>
+                <button id="scZkontrolovat" class="sc-tl" type="button">Zkontrolovat znovu</button>
+            </div>
+            <details class="sc-napoveda">
+                <summary>Jak popsat kolejiště</summary>
+                <ul>
+                    <li><b>L ST1</b>, <b>L ST2</b> … ke zhlaví: stavědlo. Prvky se přiřadí k nejbližšímu stavědlu po kolejích.</li>
+                    <li><b>L T1 Jméno stanice</b> u volného konce koleje: trať a sousední stanice.</li>
+                    <li><b>L 1</b>, <b>L K. 3</b>, <b>L Kolej 5a</b> nad kolejí: číslo dopravní koleje.</li>
+                    <li>Přejezd přes více kolejí nakresli na každou kolej se stejným názvem, je to jeden přejezd.</li>
+                </ul>
+            </details>
+            <div id="scVysledek" aria-live="polite"></div>
+        </div>
+        <footer class="sc-pata">
+            <span id="scStav" class="sc-stav"></span>
+            <button id="scStahnout" class="sc-tl sc-hlavni" type="button" disabled>Stáhnout stanici (.json)</button>
+        </footer>
+    </dialog>
     <script type="module" src="./res/main.js"></script>
+    <script type="module" src="./res/signalcraft-ui.js"></script>
     <script type="module" src="./res/header.js"></script>
     <script type="module" src="./res/navbar.js"></script>
 </body>
