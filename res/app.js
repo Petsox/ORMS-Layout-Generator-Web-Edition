@@ -1,6 +1,6 @@
 // ORMS Layout Generator v2: wires the grid, editor, palette, inspector, checks, OC preview and exports.
 import { Grid } from './grid.js';
-import { Editor, cellHTML } from './editor.js';
+import { Editor, cellHTML, enablePan } from './editor.js';
 import {
     parseCell, describe, fmt, KIND_TITLE, SIGNAL_CLASSES, SIGNAL_SYMBOL, PLAIN_TRACK, BUFFERS, JUNCTIONS, TUNNELS,
     DIR_ARROW, DIR_NAME, TRACK_DIRS, byteLength,
@@ -727,6 +727,7 @@ function flashPreview() {
     el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
 }
 new ResizeObserver(() => paintPreview()).observe(pv.scroll);
+enablePan(pv.scroll);
 
 function screenCell(e) {
     const r = pv.canvas.getBoundingClientRect();

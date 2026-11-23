@@ -511,3 +511,6 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
     .toolbar { justify-content: flex-start; }
     .st-stats, .st-save { display: none; }
 }
+
+/* moving around with the middle mouse button */
+body.panning, body.panning * { cursor: grabbing !important; }

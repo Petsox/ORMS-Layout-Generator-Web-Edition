@@ -127,6 +127,7 @@ export class Editor {
         this.ghostsEl = board.querySelector('.ghosts');
         this.input = board.querySelector('.cell-input');
         this.scroller.appendChild(board);
+        enablePan(this.scroller);
         this.setCellSize(this.cs);
         this.bindMouse();
         this.bindKeys();
@@ -681,6 +682,31 @@ export class Editor {
             this.pasteText(e.clipboardData.getData('text/plain'));
         });
     }
+}
+
+/** Moving around by dragging with the middle mouse button (wheel held down). */
+export function enablePan(scroller) {
+    scroller.addEventListener('mousedown', e => {
+        if (e.button !== 1) return;
+        e.preventDefault();          // no browser autoscroll
+        e.stopPropagation();         // the editor must not treat it as a click
+        const sx = e.clientX, sy = e.clientY, left = scroller.scrollLeft, top = scroller.scrollTop;
+        document.body.classList.add('panning');
+        const move = ev => {
+            scroller.scrollLeft = left - (ev.clientX - sx);
+            scroller.scrollTop = top - (ev.clientY - sy);
+        };
+        const up = ev => {
+            if (ev.button !== 1) return;
+            document.body.classList.remove('panning');
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+        };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+    }, true);
+    // middle click would otherwise paste (Linux) or open links
+    scroller.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
 }
 
 export { describe, cellHTML };
