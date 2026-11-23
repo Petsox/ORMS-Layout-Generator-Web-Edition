@@ -3,39 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nápověda ORMS Layout Generator</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111827'/%3E%3Cpath d='M4 13h24M4 19h24' stroke='%23cbd5e1' stroke-width='2'/%3E%3Cpath d='M22 9l-6 4 6 4z' fill='%2322c55e'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./res/app.css">
     <link rel="stylesheet" href="./res/help.css">
-    <title>Nápověda pro ORMS LGWE</title>
 </head>
-<body>
-    <div class="container">
-        <h1>Pomocná Sekce</h1>
-        <h2>Symboly:</h2>
-        <p>Pro tvorbu kolejí/výhybek používejte jen tyto symboly: ║ ═ ╔ ╗ ╚ ╝</p>
-        <p>Pro křižovatky kolejí bez výhybky (kolej se větví, ale nejde přehodit) použijte: ╠ ╣ ╦ ╩</p>
-        <p>Pro zarážedla (konec koleje), samostatně v pravém menu pod "Zarážedla": ╡ ╞ ╨ ╥. Kolej z nich pokračuje jen na tu jednu otevřenou stranu, ne do všech směrů.</p>
-        <p>Pro tvorbu Tunelů jen tyto symboly: ︹ ︺ ⦘ ⦗</p>
-        <p>Pro tvorbu Přejezdů jen tyto symboly: ╪ ╫</p>
-        <p>A pro směr Hlavních návěstidel tyto symboly: ◀ ▶ ▼ ▲</p>
-        <p>A pro směr Předvěstí tyto symboly: ◁ ▷ ▽ △</p>
-        <p>A pro směr Seřaďovacích návěstidel tyto symboly: < > ˅ ˄ (případně i ˂ ˃, pokud by ˅ ˄ nešly napsat)</p>
-        <h2>Pravidla a Konvence:</h2>
-        <h4>Příklad: ◀ N L1</h4>
-        <p>◀ označuje směr jízdy, pro který návěstidlo platí -- v tomto případě zprava doleva.</p>
-        <p>"N" je jen oddělovač formátu buňky (stejnou roli má "V"/"I" u výhybek nebo "P" u přejezdů) -- neznamená nic železničářského, jen říká generátoru, že jde o hlavní návěstidlo.</p>
-        <p>"L1" je název samotného návěstidla. V reálném provozu se vjezdová a odjezdová hlavní návěstidla obvykle značí písmenem "L" nebo "S" plus číslem koleje, pro kterou platí (např. "L1", "S3"): "L" pro směr jízdy od začátku trati (vlaky liché), "S" pro směr jízdy od konce trati (vlaky sudé) -- stejné pravidlo platí jak pro vjezdová, tak pro odjezdová návěstidla. Je to ale jen doporučená konvence pro přehlednost zápisu -- ORMS písmeno "L"/"S" v názvu nijak nekontroluje ani nevyžaduje, na rozdíl od předpon "Pr", "Se", "VS"/"VL" a "Sc"/"Lc" popsaných níže, které ORMS skutečně rozpoznává a podle kterých se řídí.</p>
-        <p>Výhybky i návěstidla se ve stanici obvykle číslují postupně ve směru od začátku trati ke konci trati (tedy podle rostoucí kilometrické polohy) -- výhybka s nejnižší kilometrickou polohou dostane nejnižší číslo; pokud jsou dvě výhybky ve stejné kilometrické poloze (rozvětvení), první se číslo přiděluje té vlevo. Koleje se číslují podobně: hlavní kolej má číslo 1 (na dvoukolejné trati 1 a 2), koleje vlevo (při pohledu směrem ke konci trati) dostávají lichá čísla (3, 5, 7, ...), koleje vpravo sudá čísla (2, 4, 6, ...).</p>
-        <p>Příklad předvěsti: ◁ N PrL1 -- ◁ je směr, "Pr" označuje předvěst (viz níže), "L1" je název návěstidla, kterému tahle předvěst patří.</p>
-        <p>Ani číslování výhybek/kolejí/návěstidel podle kilometráže, ani písmena "L"/"S", ani jakákoliv písmena z názvu stanice nejsou pro ORMS povinná -- jsou to jen doporučené konvence z reálného provozu pro čitelnost zápisu. ORMS ke správné funkci potřebuje jen správné symboly (viz výše) a předpony popsané v sekci níže; zbytek názvu návěstidla/výhybky/přejezdu si může uživatel zvolit libovolně.</p>
-        <h2>Speciální předpony názvů návěstidel:</h2>
-        <p>Kromě "Pr" (předvěst) a "Se" (seřaďovací) rozeznává ORMS ještě tyto předpony v názvu návěstidla:</p>
-        <p><strong>VS / VL</strong> -- Vložené návěstidlo. Používá se u stanic, kde více kolejí sdílí jedno odjezdové návěstidlo -- vložené návěstidlo označuje, na kterou konkrétní kolej se cesta staví.</p>
-        <p><strong>Sc / Lc</strong> -- Cestové návěstidlo (opakovač). Buď stojí samostatně jako odjezdové návěstidlo, nebo -- pokud po něm v postavené cestě následuje další hlavní návěstidlo -- opakuje jeho návěst s předponou "Opak" (např. "Volno" se zobrazí jako "OpakVolno").</p>
-        <p>Tyto předpony nic neovlivňují v samotném generátoru, jsou to jen konvence, které si musí uživatel dodržet ať to na straně ORMS funguje správně.</p>
-        <h2>Výhybky:</h2>
-        <p>Buňka výhybky má tvar <code>&lt;symbol1&gt; V &lt;symbol2&gt; &lt;název&gt;</code>, např. "═ V ╔ Vy1" -- první symbol je vzhled ve vypnutém stavu, druhý symbol ve stavu zapnutém, "V" je jen oddělovač označující, že se jedná o výhybku (přes pravé menu "Vyhybka" &rarr; "Normální").</p>
-        <p>Pokud je fyzický blok výhybky ve světě otočený/zapojený obráceně oproti ostatním (po resetu/rebootu ORMS ukazuje GUI správný symbol, ale fyzicky je výhybka přehozená), použijte místo "V" oddělovač "I" (přes "Vyhybka" &rarr; "Invertovaná"), např. "═ I ╔ Vy1". Symboly a jejich pořadí zůstávají stejné (první = vypnuto, druhý = zapnuto) -- "I" jen řekne ORMS, aby pro tuhle jednu výhybku poslal opačný povel, aby fyzický stav odpovídal tomu, co je vidět v GUI.</p>
-        <h2>Popisky (Labels):</h2>
-        <p><strong>Popisek nikdy neumisťujte doprostřed koleje tak, aby ji přerušil</strong> (typicky číslo koleje napsané do mezery uprostřed rovného úseku). ORMS s popisky při hledání cesty vůbec nepočítá -- taková mezera je pro program neprůchozí díra, i když trať na pohled vypadá spojitě, a cesta pak zbytečně objíždí přes výhybky, aby se přes ni dostala. Popisek dejte vždy vedle koleje (nad/pod ni), nikdy do jejího středu.</p>
-    </div>
+<body class="help">
+<header class="help-top">
+    <a class="back" href="index.html">← Zpět do editoru</a>
+    <b>ORMS Layout Generator · Nápověda</b>
+</header>
+<div class="help-wrap">
+    <nav class="toc" aria-label="Obsah">
+        <a href="#start">Rychlý start</a>
+        <a href="#editor">Ovládání editoru</a>
+        <a href="#formaty">Formáty buněk</a>
+        <a href="#koleje">Koleje a symboly</a>
+        <a href="#vyhybky">Výhybky</a>
+        <a href="#navestidla">Návěstidla</a>
+        <a href="#prejezdy">Přejezdy</a>
+        <a href="#popisky">Popisky</a>
+        <a href="#kontrola">Kontrola</a>
+        <a href="#nahled">Náhled a centrování</a>
+        <a href="#export">Export, import, soubory</a>
+        <a href="#signalcraft">SignalCraft (EMZZ)</a>
+        <a href="#konvence">Konvence z provozu</a>
+    </nav>
+
+    <main class="doc">
+        <h1>Nápověda</h1>
+        <p class="lead">Generátor kreslí kolejiště pro <a href="https://github.com/Petsox/Open-Rail-Management-System" target="_blank" rel="noopener">ORMS</a> (Open Rail Management System) v modu OpenComputers. Výsledkem je soubor <code>config.lua</code>, který ORMS vykreslí na obrazovce počítače 160 × 50 znaků a podle kterého ovládá výhybky, návěstidla a přejezdy.</p>
+        <figure class="shot">
+            <img src="res/orms-in-game.png" alt="Kolejiště vykreslené programem ORMS na obrazovce OpenComputers ve hře">
+            <figcaption>Takhle vypadá kolejiště v ORMS ve hře. Stejný pohled ukazuje náhled pod editorem.</figcaption>
+        </figure>
+
+        <section id="start">
+            <h2>Rychlý start</h2>
+            <ol class="steps-big">
+                <li><b>Nakreslete koleje.</b> Vyberte nástroj <span class="ui">Kolej</span> a táhněte myší. Rovné úseky i oblouky se doplní samy. Když tah začnete nebo skončíte na existující koleji, vznikne výhybka.</li>
+                <li><b>Vložte prvky.</b> Klikněte do buňky a v paletě vlevo zvolte návěstidlo, přejezd nebo popisek. Názvy se číslují samy (Vy1, Vy2 …, S1, S2 …).</li>
+                <li><b>Upravte vlastnosti.</b> Panel <span class="ui">Buňka</span> vpravo ukáže, co je v buňce, a nabídne tlačítka pro směr, druh, název a polohu výhybky, takže formát nemusíte psát ručně.</li>
+                <li><b>Opravte problémy.</b> Panel <span class="ui">Kontrola</span> průběžně hlídá chyby. Buňky s problémem mají v rohu červený nebo žlutý trojúhelník, klik na hlášení buňku ukáže.</li>
+                <li><b>Zkontrolujte náhled</b> obrazovky OpenComputers pod editorem a dejte <span class="ui">Export Lua</span>.</li>
+            </ol>
+            <p>Rozpracované kolejiště se průběžně ukládá v prohlížeči. Tlačítkem <span class="ui">Uložit</span> kolejiště uložíte rovnou jako soubor <code>.lua</code> pro ORMS: nejdřív zadáte název, pak vyberete, kam se má uložit.</p>
+        </section>
+
+        <section id="editor">
+            <h2>Ovládání editoru</h2>
+            <h3>Nástroje</h3>
+            <dl class="defs">
+                <dt>Výběr</dt><dd>Klik vybere buňku, tažením vyberete oblast, klik na číslo řádku nebo sloupce vybere celý řádek nebo sloupec. Psaním začnete upravovat buňku.</dd>
+                <dt>Kolej</dt><dd>Kreslí trať tažením. Návratem po stejné cestě čáru zkrátíte. Začátek nebo konec tahu na rovné koleji vytvoří výhybku; její hrot se určí podle toho, kam kolej dál pokračuje (typická spojka mezi dvěma kolejemi tak vznikne jedním tahem).</dd>
+                <dt>Štětec</dt><dd>Kreslí prvek zvolený v paletě do každé buňky, přes kterou táhnete. Pojmenované prvky se číslují postupně.</dd>
+                <dt>Guma</dt><dd>Maže buňky tažením.</dd>
+            </dl>
+            <h3>Klávesnice a myš</h3>
+            <table class="tbl">
+                <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>posun výběru, s <kbd>Ctrl</kbd> o 10 buněk, s <kbd>Shift</kbd> rozšíření výběru</td></tr>
+                <tr><td>psaní, <kbd>Enter</kbd>, <kbd>F2</kbd>, dvojklik</td><td>úprava buňky. <kbd>Enter</kbd> potvrdí a posune dolů, <kbd>Tab</kbd> doprava, <kbd>Esc</kbd> zruší. Během psaní se dole ukazuje, jak generátor text chápe.</td></tr>
+                <tr><td><kbd>-</kbd> nebo <kbd>=</kbd>, <kbd>|</kbd></td><td>napsané samostatně se změní na ═ a ║</td></tr>
+                <tr><td><kbd>Delete</kbd></td><td>smazat výběr</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>kopírovat, vyjmout, vložit. Formát je kompatibilní s Excelem a Google Tabulkami.</td></tr>
+                <tr><td>tažení za okraj výběru</td><td>přesune vybrané buňky jinam (kurzor se změní na šipky), s <kbd>Ctrl</kbd> je zkopíruje, jako v Excelu. Celý přesun jde vrátit jedním <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</td></tr>
+                <tr><td>čtvereček v rohu výběru</td><td>tažením rozkopíruje výběr do dalších buněk (jako v Excelu)</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>zpět a znovu (funguje pro všechny úpravy včetně načtení souboru)</td></tr>
+                <tr><td>držení kolečka myši + tažení</td><td>posun po kolejišti, funguje v editoru i v náhledu</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+kolečko, tlačítka −/+ dole</td><td>zoom mřížky</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>O</kbd>, <kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>uložit .lua, otevřít soubor, náhled exportu Lua</td></tr>
+                <tr><td>pravé tlačítko</td><td>místní nabídka (schránka, rychlé vložení prvku, ukázat v náhledu)</td></tr>
+            </table>
+            <p>Souřadnice v záhlaví mřížky (X sloupec, Y řádek) jsou přesně ty, které se zapíší do <code>config.lua</code>, pokud je vypnuté automatické centrování.</p>
+        </section>
+
+        <section id="formaty">
+            <h2>Formáty buněk</h2>
+            <p>Každá buňka obsahuje obyčejný text, stejně jako v první verzi generátoru, takže staré soubory .csv i .lua fungují dál. Export čte znaky na pevných pozicích, proto záleží na mezerách.</p>
+            <table class="tbl fmt">
+                <thead><tr><th>Prvek</th><th>Zápis</th><th>Příklad</th><th>Poznámka</th></tr></thead>
+                <tr><td>Kolej</td><td><code>symbol</code></td><td><code>═</code></td><td>jediný znak, viz <a href="#koleje">symboly</a></td></tr>
+                <tr><td>Výhybka</td><td><code>A V B název</code></td><td><code>═ V ╗ Vy1</code></td><td>A = základní poloha, B = odbočka; <code>I</code> místo <code>V</code> = invertovaná</td></tr>
+                <tr><td>Návěstidlo</td><td><code>směr N název</code></td><td><code>◀ N S1</code></td><td>druh určuje předpona názvu (Pr, Se, VS/VL, Sc/Lc)</td></tr>
+                <tr><td>Přejezd</td><td><code>symbol P kolej název</code></td><td><code>╪ P ═ P1</code></td><td>╪ na vodorovné koleji (kolej ═), ╫ na svislé (kolej ║)</td></tr>
+                <tr><td>Popisek</td><td><code>L text</code></td><td><code>L Nymburk hl.n.</code></td><td>za L musí být mezera</td></tr>
+            </table>
+            <p>Písmena <code>V</code>, <code>I</code>, <code>N</code>, <code>P</code> uprostřed jsou jen oddělovače, které generátoru říkají, o jaký prvek jde. Nemají železniční význam.</p>
+        </section>
+
+        <section id="koleje">
+            <h2>Koleje a symboly</h2>
+            <table class="tbl sym">
+                <tr><th>Koleje a oblouky</th><td><span class="g">═ ║ ╔ ╗ ╚ ╝</span></td><td>jediné symboly, ze kterých se skládají i výhybky</td></tr>
+                <tr><th>Zarážedla</th><td><span class="g">╞ ╡ ╥ ╨</span></td><td>konec koleje; kolej pokračuje jen na otevřenou stranu (╞ doprava, ╡ doleva, ╥ dolů, ╨ nahoru)</td></tr>
+                <tr><th>Tunely</th><td><span class="g">⦗ ⦘ ︹ ︺</span></td><td>portály; ⦗ ⦘ na vodorovné koleji, ︹ ︺ na svislé. ORMS je kreslí modře.</td></tr>
+                <tr><th>Pevná rozvětvení</th><td><span class="g">╠ ╣ ╦ ╩</span></td><td>kolej se větví, ale nejde přestavit. ORMS jimi cestu najde, export do SignalCraftu je nepřijme.</td></tr>
+                <tr><th>Přejezdy</th><td><span class="g">╪ ╫</span></td><td>viz <a href="#prejezdy">Přejezdy</a></td></tr>
+                <tr><th>Hlavní návěstidla</th><td><span class="g">◀ ▶ ▼ ▲</span></td><td rowspan="3">šipka ukazuje směr jízdy, pro který návěstidlo platí; ◀ = zprava doleva</td></tr>
+                <tr><th>Předvěsti</th><td><span class="g">◁ ▷ ▽ △</span></td></tr>
+                <tr><th>Seřaďovací</th><td><span class="g">&lt; &gt; ˅ ˄</span></td></tr>
+            </table>
+            <p>Symboly, které nejsou na klávesnici, najdete v paletě. Kolej se nejrychleji kreslí nástrojem <span class="ui">Kolej</span>.</p>
+        </section>
+
+        <section id="vyhybky">
+            <h2>Výhybky</h2>
+            <p>Buňka výhybky má tvar <code>&lt;symbol1&gt; V &lt;symbol2&gt; &lt;název&gt;</code>, např. <code>═ V ╔ Vy1</code>. První symbol je vzhled ve vypnutém stavu (základní poloha), druhý ve stavu zapnutém (odbočka). Oba symboly musí mít právě jeden společný konec, to je hrot výhybky. Kontrola upozorní, když tomu tak není nebo když jsou oba symboly stejné.</p>
+            <p><b>Invertovaná výhybka.</b> Pokud je fyzický blok výhybky ve světě otočený nebo zapojený obráceně oproti ostatním (po resetu ORMS ukazuje správný symbol, ale fyzicky je výhybka přehozená), použijte místo <code>V</code> oddělovač <code>I</code>, např. <code>═ I ╔ Vy1</code>, nebo zaškrtněte <span class="ui">Invertovaná</span> v panelu Buňka. Symboly a jejich pořadí zůstávají stejné; <code>I</code> jen řekne ORMS, aby pro tuhle výhybku poslal opačný povel.</p>
+            <p>Názvy výhybek musí být jedinečné, ORMS je ovládá podle názvu.</p>
+        </section>
+
+        <section id="navestidla">
+            <h2>Návěstidla</h2>
+            <h4>Příklad: <code>◀ N L1</code></h4>
+            <p>◀ označuje směr jízdy, pro který návěstidlo platí (zprava doleva), <code>N</code> je oddělovač a <code>L1</code> je název. Symbol určuje směr a vzhled, <b>druh návěstidla ale ORMS pozná podle předpony názvu</b>:</p>
+            <table class="tbl">
+                <thead><tr><th>Předpona</th><th>Druh</th><th>Význam</th></tr></thead>
+                <tr><td>(jiná)</td><td>Hlavní</td><td>vjezdové, odjezdové, cestové hlavní návěstidlo</td></tr>
+                <tr><td><code>Pr</code></td><td>Předvěst</td><td>„Pr“ + název hlavního návěstidla, ke kterému patří (<code>◁ N PrL1</code> k <code>L1</code>). ORMS ji nastavuje automaticky podle hlavního návěstidla.</td></tr>
+                <tr><td><code>Se</code></td><td>Seřaďovací</td><td>posunová návěstidla</td></tr>
+                <tr><td><code>VS</code>, <code>VL</code></td><td>Vložené</td><td>u stanic, kde více kolejí sdílí jedno odjezdové návěstidlo; označuje, na kterou kolej se cesta staví</td></tr>
+                <tr><td><code>Sc</code>, <code>Lc</code></td><td>Cestové (opakovač)</td><td>buď samostatné odjezdové, nebo opakuje návěst dalšího hlavního návěstidla v cestě s předponou „Opak“ (např. „Volno“ → „OpakVolno“)</td></tr>
+            </table>
+            <p>Kontrola upozorní, když předpona a symbol nesedí (např. <code>◀ N PrS1</code> má symbol hlavního návěstidla, ale ORMS z něj udělá předvěst), když předvěst nemá své hlavní návěstidlo, když se název opakuje a když návěstidlo nestojí na koleji. V panelu Buňka se druh mění tlačítkem a název se upraví sám.</p>
+        </section>
+
+        <section id="prejezdy">
+            <h2>Přejezdy</h2>
+            <p>Zápis <code>╪ P ═ P4953</code>: první symbol je vzhled přejezdu, druhý je kolej, po které ORMS hledá cestu (a kterou ukáže, když je přejezd zapnutý), poslední je název. ╪ patří na vodorovnou kolej s druhým symbolem ═, ╫ na svislou s ║.</p>
+            <p>Přejezd přes více kolejí nakreslete na každou kolej zvlášť se stejným názvem (např. „P4“ nad sebou). ORMS je ovládá společně, SignalCraft je bere jako jeden přejezd.</p>
+        </section>
+
+        <section id="popisky">
+            <h2>Popisky (Labels)</h2>
+            <p><b>Popisek nikdy neumisťujte doprostřed koleje tak, aby ji přerušil</b> (typicky číslo koleje napsané do mezery uprostřed rovného úseku). ORMS s popisky při hledání cesty nepočítá, taková mezera je pro něj neprůchozí díra a cesta pak zbytečně objíždí přes výhybky. Popisek dejte vždy vedle koleje, nad ni nebo pod ni. Kontrola tuhle chybu hlásí.</p>
+            <p><b>ORMS popisek vycentruje na buňku</b>, do které je zapsaný, a vykreslí ho jako modrý obdélník široký jako text + 2 znaky, přes všechno ostatní. Delší popisek tak může zakrýt koleje nebo návěstidla vedle. Kontrola to hlásí a náhled to ukazuje přesně. Šířka se počítá v bajtech UTF-8, takže písmena s diakritikou zaberou v ORMS o něco víc místa.</p>
+        </section>
+
+        <section id="kontrola">
+            <h2>Kontrola</h2>
+            <p>Kontrola běží při každé změně. <span class="err">Chyby</span> znamenají, že export nebo ORMS nebude fungovat správně, <span class="warn">upozornění</span> ukazují na pravděpodobný problém, <span class="inf">info</span> jen doplňuje.</p>
+            <ul>
+                <li>neznámý obsah buňky nebo špatný formát (chybějící mezery, „L“ bez mezery, samotný symbol návěstidla bez názvu) – takové buňky by se do Lua tiše nevyexportovaly;</li>
+                <li>výhybka se stejnými symboly nebo bez společného hrotu, přejezd se špatnou kolejí;</li>
+                <li>uvozovky nebo zpětné lomítko v názvu (rozbily by <code>config.lua</code>);</li>
+                <li>dvě výhybky nebo dvě návěstidla se stejným názvem;</li>
+                <li>kolej, která nenavazuje na sousední buňku, díra v koleji, popisek uprostřed koleje;</li>
+                <li>návěstidlo mimo kolej, předvěst bez hlavního návěstidla, nesoulad předpony a symbolu;</li>
+                <li>popisek, který v ORMS zakryje sousední prvky nebo přesáhne okraj obrazovky;</li>
+                <li>prvky, které leží mimo viditelnou plochu obrazovky ORMS (sloupec nebo řádek 0 bez centrování) nebo překryjí nadpis.</li>
+            </ul>
+            <p>Export Lua proběhne i s chybami, jen na ně upozorní.</p>
+        </section>
+
+        <section id="nahled">
+            <h2>Náhled OpenComputers a centrování</h2>
+            <p>Náhled vykresluje obrazovku 160 × 50 znaků tak, jak to dělá ORMS: stejné barvy (šedé koleje, modré tunely a popisky, bílé názvy), stejné umístění názvů výhybek a návěstidel, stejné pořadí kreslení (popisky přes všechno) i nadpis a tlačítka [Settings], [Route] a [Exit]. Najetím myši vidíte souřadnice, klikem vyberete buňku v editoru.</p>
+            <dl class="defs">
+                <dt>Auto-centrování</dt><dd>Při exportu posune celé kolejiště doprostřed obrazovky (mezi nadpis a spodní řádek s tlačítky), aby nebylo nalepené v rohu. V mřížce můžete kreslit kdekoli. Posun se počítá z toho, co ORMS opravdu vykreslí, tedy včetně šířky popisků a názvů. Vypnuté = souřadnice v <code>config.lua</code> odpovídají přesně mřížce.</dd>
+                <dt>Výhybky, Návěstidla</dt><dd>Zobrazení názvů, jako přepínače Switch Numbers a Signal Names v nastavení ORMS.</dd>
+                <dt>Přesně jako ORMS</dt><dd>Současné ORMS názvy zkracuje: u návěstidel vynechá poslední dva znaky (<code>string.sub(name, 1, -3)</code>), u výhybek začínajících „Vy“ ukáže jen <code>string.sub(name, 3, -3)</code>, takže z „Vy12“ nezbude nic. Název vodorovného návěstidla s lichou délkou po zkrácení navíc padne na půl buňky a nevykreslí se vůbec. Zapnuto ukazuje přesně tohle chování, vypnuto ukazuje celé názvy.</dd>
+                <dt>Simulace</dt><dd>Klikáním v náhledu přehazujete výhybky, zapínáte přejezdy (červeně) a měníte barvu návěstidel, jako v ORMS.</dd>
+            </dl>
+        </section>
+
+        <section id="export">
+            <h2>Export, import a soubory</h2>
+            <dl class="defs">
+                <dt>Export Lua</dt><dd>Vytvoří obsah <code>config.lua</code> pro ORMS (Config.Signals, Tracks, Switches, Crossings, Labels). Kód zkopírujete nebo stáhnete jako soubor; v OpenComputers jím nahraďte <code>config.lua</code> v adresáři ORMS. Formát je stejný jako v první verzi generátoru.</dd>
+                <dt>Uložit</dt><dd>Zeptá se na název souboru (pro ORMS <code>config.lua</code>) a pak otevře okno pro výběr místa uložení. V prohlížečích, které výběr místa neumí (Firefox, Safari), se soubor uloží do Stažených souborů. Buňky s neplatným obsahem se do .lua neuloží, dialog na ně upozorní. Se zapnutým auto-centrováním se uloží vycentrované souřadnice.</dd>
+                <dt>Otevřít .csv</dt><dd>Projekty z první verze generátoru (.csv) jde pořád otevřít.</dd>
+                <dt>Otevřít .lua</dt><dd>Načte existující <code>config.lua</code> zpátky do mřížky. Soubor lze také přetáhnout myší do okna.</dd>
+                <dt>Nový</dt><dd>Vymaže mřížku. Jde to vrátit přes <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</dd>
+            </dl>
+        </section>
+
+        <section id="signalcraft">
+            <h2>Export do SignalCraftu (EMZZ)</h2>
+            <p>Tlačítko <span class="ui">SignalCraft</span> zkontroluje kolejiště a vytvoří soubor stanice pro elektromechanické zabezpečovací zařízení v modu SignalCraft. Soubor se vloží do přístroje v dopravní kanceláři, ke kterému se pak SignalBonderem připojí přístroje stavědel.</p>
+            <p><b>Stavědla:</b> popisek „L ST1“, „L ST2“ … dejte ke zhlaví, které stavědlo obsluhuje. Výhybky, návěstidla a přejezdy patří k tomu stavědlu, ke kterému mají nejblíž po kolejích.</p>
+            <p><b>Tratě:</b> k volnému konci koleje, kudy vede trať do sousední stanice, dejte popisek „L T1 Jméno stanice“ (např. „L T1 Kamenice“).</p>
+            <p><b>Dopravní koleje:</b> číslo koleje jako popisek nad kolejí (např. „L 1“, „L K. 3“, „L Kolej 5a“). Na tyto koleje vedou vjezdové cesty.</p>
+            <p><b>Přejezdy:</b> přejezd přes více kolejí nakreslete na každou kolej se stejným názvem (např. „P4“ nad sebou). Bere se jako jeden přejezd přes všechny tyto koleje.</p>
+            <p><b>Cestová a skupinová návěstidla</b> (Sc, Lc): odjezdová vlaková cesta může začínat u cestového návěstidla na konci koleje a vést přes skupinové odjezdové návěstidlo (např. Sc2 → S2 → trať). Hlavní návěstidla, která cesta míjí ve svém směru, se rozsvítí také; cestové návěstidlo opakuje návěst dalšího hlavního návěstidla (Opak.). Skupinové návěstidlo mezi výhybkami pak samo vlakové cesty nemá. K míjeným návěstidlům je vhodné dát detektor, aby zhasla po průjezdu vlaku.</p>
+            <p><b>Vlakové cesty</b> se dopočítají samy: od vjezdového návěstidla na každou dopravní kolej, kam se dá dojet, a od odjezdového návěstidla na každou trať. Vjezdové je návěstidlo, za kterým (proti jeho směru) je bez výhybky rovnou trať.</p>
+            <p><b>Kontrola</b> hledá díry v kolejích, popisky v koleji, výhybky bez právě jednoho společného konce (hrotu), návěstidla mimo kolej, dvojí názvy, prvky bez stavědla a tratě bez cest. Chybné buňky se v mřížce podbarví červeně, upozornění žlutě; klik na souřadnice v hlášení buňku ukáže.</p>
+            <p>Pevná rozvětvení ╠ ╣ ╦ ╩ export nepřijme: v EMZZ se přes ně nedá postavit cesta, nahraďte je výhybkou.</p>
+        </section>
+
+        <section id="konvence">
+            <h2>Konvence z reálného provozu</h2>
+            <p>Nic z této sekce ORMS nevyžaduje. Ke správné funkci potřebuje jen správné symboly a předpony popsané výše, zbytek názvu si můžete zvolit libovolně. Konvence ale pomáhají čitelnosti.</p>
+            <p>Vjezdová a odjezdová hlavní návěstidla se obvykle značí písmenem „L“ nebo „S“ a číslem koleje, pro kterou platí (L1, S3): „L“ pro směr jízdy od začátku trati (vlaky liché), „S“ pro směr od konce trati (vlaky sudé).</p>
+            <p>Výhybky i návěstidla se ve stanici číslují postupně od začátku trati ke konci (podle rostoucí kilometrické polohy). Pokud jsou dvě výhybky ve stejné poloze (rozvětvení), nižší číslo dostane ta vlevo. Hlavní kolej má číslo 1 (na dvoukolejné trati 1 a 2), koleje vlevo při pohledu ke konci trati dostávají lichá čísla (3, 5, 7 …), koleje vpravo sudá (2, 4, 6 …).</p>
+        </section>
+    </main>
+</div>
 </body>
 </html>

@@ -3,162 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./res/css.css">
-    <title>ORMS Layout Generator - Web edition</title>
+    <meta name="description" content="Editor kolejišť pro ORMS (Open Rail Management System) v OpenComputers, s náhledem obrazovky a kontrolou.">
+    <title>ORMS Layout Generator</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111827'/%3E%3Cpath d='M4 13h24M4 19h24' stroke='%23cbd5e1' stroke-width='2'/%3E%3Cpath d='M22 9l-6 4 6 4z' fill='%2322c55e'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./res/app.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="brand2"> ORMS Layout Generator - Web Edition v1.0</div>
-        <div class="brand"> Vybraná buňka: X: 0, Y: 0</div>
-        <div class="navbar-buttons">
-            <button id="convertLuaButton" class="button">Převést do LUA</button>
-            <button id="saveCSVButton" class="button">Uložit do .csv</button>
-            <button id="loadCSVButton" class="button">Načíst z .csv</button>
-            <button id="loadLuaButton" class="button">Načíst z .lua</button>
-            <button id="deleteAllButton" class="button">Smazat vše</button>
-            <button id="helpButton" class="button">Nápověda</button>
+<div class="app" id="app" data-view="split">
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo" aria-hidden="true"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7"/><path d="M4 13h24M4 19h24"/><path class="lamp" d="M22 9l-6 4 6 4z"/></svg></span>
+            <span class="brand-text"><b>ORMS Layout Generator</b><small>v2.0 · Web Edition</small></span>
         </div>
-    </nav>
-    <div id="table-container">
-        <table id="excel-table">
-            <!-- JavaScript will generate rows and cells -->
+
+        <nav class="toolbar" aria-label="Nástroje">
+            <div class="tgroup" role="group" aria-label="Soubor">
+                <button class="tb" data-action="new" data-icon="filePlus" title="Nové kolejiště">Nový</button>
+                <button class="tb" data-action="open" data-icon="folder" title="Otevřít .csv nebo .lua (Ctrl+O)">Otevřít</button>
+                <button class="tb" data-action="save" data-icon="save" title="Uložit kolejiště jako .lua (Ctrl+S)">Uložit</button>
+            </div>
+            <div class="tgroup" role="group" aria-label="Historie">
+                <button class="tb icon" data-action="undo" data-icon="undo" title="Zpět (Ctrl+Z)" aria-label="Zpět"></button>
+                <button class="tb icon" data-action="redo" data-icon="redo" title="Znovu (Ctrl+Y)" aria-label="Znovu"></button>
+            </div>
+            <div class="tgroup seg" role="radiogroup" aria-label="Nástroj">
+                <button class="tb" data-tool="select" data-icon="pointer" title="Výběr a psaní do buněk (Esc)" aria-pressed="true">Výběr</button>
+                <button class="tb" data-tool="pen" data-icon="rails" title="Kreslit kolej tažením myši, oblouky a výhybky se doplní samy">Kolej</button>
+                <button class="tb" data-tool="brush" data-icon="brush" title="Štětec: kreslí prvek vybraný v paletě">Štětec</button>
+                <button class="tb" data-tool="erase" data-icon="eraser" title="Guma: maže tažením">Guma</button>
+            </div>
+            <div class="tgroup seg" role="radiogroup" aria-label="Zobrazení">
+                <button class="tb icon" data-view="editor" data-icon="grid" title="Jen editor" aria-label="Jen editor"></button>
+                <button class="tb icon" data-view="split" data-icon="split" title="Editor a náhled" aria-label="Editor a náhled"></button>
+                <button class="tb icon" data-view="preview" data-icon="monitor" title="Jen náhled OpenComputers" aria-label="Jen náhled"></button>
+            </div>
+            <div class="tgroup">
+                <button class="tb primary" data-action="lua" data-icon="code" title="Vygenerovat config.lua pro ORMS (Ctrl+E)">Export Lua</button>
+                <button class="tb" data-action="signalcraft" data-icon="signal" title="Export stanice pro SignalCraft (EMZZ)">SignalCraft</button>
+            </div>
+            <div class="tgroup">
+                <button class="tb icon" data-action="shortcuts" data-icon="keyboard" title="Klávesové zkratky" aria-label="Klávesové zkratky"></button>
+                <a class="tb" href="help.html" target="_blank" rel="noopener" data-icon="help" title="Nápověda (F1)">Nápověda</a>
+            </div>
+        </nav>
+    </header>
+
+    <aside class="palette panel" id="palette" aria-label="Paleta prvků">
+        <div class="panel-head">
+            <h2>Paleta</h2>
+            <span class="hint" id="paletteHint">Klik vloží do výběru</span>
+        </div>
+        <div class="palette-body" id="paletteBody"></div>
+    </aside>
+
+    <main class="work">
+        <section class="editor-pane" aria-label="Editor kolejiště">
+            <div class="board-scroll" id="boardScroll"></div>
+            <div class="edit-hint" id="editHint" hidden></div>
+            <div class="empty-state" id="emptyState" hidden>
+                <h3>Prázdné kolejiště</h3>
+                <p>Nakreslete koleje tažením myši, prvky vkládejte z palety vlevo. Vpravo se ukazuje, co je vybrané a co je potřeba opravit, dole vidíte, jak bude kolejiště vypadat v ORMS.</p>
+                <div class="btn-row">
+                    <button class="btn primary" data-action="startPen" data-icon="rails">Kreslit kolej</button>
+                    <button class="btn" data-action="open" data-icon="folder">Otevřít soubor</button>
+                    <button class="btn" data-action="demo">Načíst ukázku</button>
+                </div>
+            </div>
+        </section>
+        <div class="splitter" id="splitter" role="separator" aria-orientation="horizontal" title="Táhněte pro změnu velikosti"></div>
+        <section class="preview-pane" aria-label="Náhled OpenComputers">
+            <div class="preview-bar">
+                <h2><span class="dot"></span>Náhled OpenComputers <small>160 × 50</small></h2>
+                <div class="pv-opts">
+                    <label class="chk" title="Při exportu posune kolejiště doprostřed obrazovky, aby nebylo nalepené v rohu"><input type="checkbox" id="optCenter" checked> Auto-centrování</label>
+                    <label class="chk" title="Názvy výhybek (v ORMS: Settings → Switch Numbers)"><input type="checkbox" id="optSwNames" checked> Výhybky</label>
+                    <label class="chk" title="Názvy návěstidel (v ORMS: Settings → Signal Names)"><input type="checkbox" id="optSigNames" checked> Návěstidla</label>
+                    <label class="chk" title="Vykreslit přesně jako současné ORMS, včetně jeho zkracování názvů. Vypněte, pokud chcete vidět celé názvy."><input type="checkbox" id="optFaithful" checked> Přesně jako ORMS</label>
+                    <label class="chk" title="Mřížka znaků"><input type="checkbox" id="optGrid"> Mřížka</label>
+                    <label class="chk" title="Velikost náhledu"><select id="optPvZoom" class="pv-zoom"><option value="fit">Přizpůsobit</option><option value="6">75 %</option><option value="8">100 %</option><option value="12">150 %</option><option value="16">200 %</option></select></label>
+                    <label class="chk sim" title="Klikáním přehazujete výhybky, zapínáte přejezdy a měníte návěsti, jako v ORMS"><input type="checkbox" id="optSim"> Simulace</label>
+                </div>
+            </div>
+            <div class="preview-scroll" id="previewScroll">
+                <div class="preview-frame" id="previewFrame">
+                    <canvas id="previewCanvas" aria-label="Náhled obrazovky ORMS"></canvas>
+                    <div class="pv-sel" id="pvSel"></div>
+                </div>
+            </div>
+            <div class="preview-foot">
+                <span id="pvInfo">Najeďte myší na náhled.</span>
+                <span id="pvOffset"></span>
+            </div>
+        </section>
+    </main>
+
+    <aside class="inspector panel" id="inspector" aria-label="Vlastnosti a kontrola">
+        <div class="tabs" role="tablist">
+            <button role="tab" data-tab="cell" aria-selected="true">Buňka</button>
+            <button role="tab" data-tab="check" aria-selected="false">Kontrola <span class="badge" id="checkBadge"></span></button>
+        </div>
+        <div class="tabpanel" id="tabCell" role="tabpanel"></div>
+        <div class="tabpanel" id="tabCheck" role="tabpanel" hidden>
+            <div class="check-summary" id="checkSummary"></div>
+            <div class="check-filter seg" role="radiogroup" aria-label="Filtr">
+                <button data-filter="all" aria-pressed="true">Vše</button>
+                <button data-filter="error" aria-pressed="false">Chyby</button>
+                <button data-filter="warn" aria-pressed="false">Upozornění</button>
+                <button data-filter="info" aria-pressed="false">Info</button>
+            </div>
+            <ul class="issues" id="issueList"></ul>
+        </div>
+    </aside>
+
+    <footer class="statusbar">
+        <span class="st-pos" id="stPos">X 0 · Y 0</span>
+        <span class="st-desc" id="stDesc"></span>
+        <span class="st-stats" id="stStats"></span>
+        <button class="st-check" id="stCheck" type="button"></button>
+        <span class="st-save" id="stSave"></span>
+        <span class="zoom">
+            <button type="button" data-action="zoomOut" aria-label="Oddálit">−</button>
+            <span id="zoomVal">100 %</span>
+            <button type="button" data-action="zoomIn" aria-label="Přiblížit">+</button>
+        </span>
+    </footer>
+</div>
+
+<!-- right-click menu -->
+<ul class="ctx" id="ctxMenu" role="menu" hidden>
+    <li role="menuitem" data-cmd="edit">Upravit text<kbd>Enter</kbd></li>
+    <li class="sep"></li>
+    <li role="menuitem" data-cmd="cut">Vyjmout<kbd>Ctrl+X</kbd></li>
+    <li role="menuitem" data-cmd="copy">Kopírovat<kbd>Ctrl+C</kbd></li>
+    <li role="menuitem" data-cmd="paste">Vložit<kbd>Ctrl+V</kbd></li>
+    <li role="menuitem" data-cmd="clear">Smazat<kbd>Del</kbd></li>
+    <li class="sep"></li>
+    <li role="menuitem" data-cmd="track">Kolej ═</li>
+    <li role="menuitem" data-cmd="switch">Výhybka</li>
+    <li role="menuitem" data-cmd="signal">Hlavní návěstidlo</li>
+    <li role="menuitem" data-cmd="label">Popisek</li>
+    <li class="sep"></li>
+    <li role="menuitem" data-cmd="showPreview">Ukázat v náhledu</li>
+</ul>
+
+<!-- Lua export -->
+<dialog class="dlg" id="luaDialog" aria-labelledby="luaTitle">
+    <header class="dlg-head">
+        <h2 id="luaTitle">Export pro ORMS (config.lua)</h2>
+        <button class="x" data-close aria-label="Zavřít" title="Zavřít (Esc)">&times;</button>
+    </header>
+    <div class="dlg-body">
+        <div id="luaStatus"></div>
+        <ol class="steps">
+            <li>Zkopírujte kód nebo ho uložte jako <code>config.lua</code>.</li>
+            <li>V OpenComputers nahraďte obsah souboru <code>config.lua</code> v adresáři ORMS (např. <code>edit config.lua</code>).</li>
+            <li>Spusťte ORMS znovu.</li>
+        </ol>
+        <label class="chk block"><input type="checkbox" id="luaCenter"> Vycentrovat kolejiště na obrazovce <span class="muted" id="luaCenterInfo"></span></label>
+        <pre class="code" id="luaCode" tabindex="0"></pre>
+    </div>
+    <footer class="dlg-foot">
+        <span class="muted" id="luaSize"></span>
+        <button class="btn" id="luaCopy" data-icon="copy" autofocus>Kopírovat</button>
+        <button class="btn primary" id="luaDownload" data-icon="save">Uložit…</button>
+    </footer>
+</dialog>
+
+<!-- save as .lua -->
+<dialog class="dlg narrow" id="saveDialog" aria-labelledby="saveTitle">
+    <form method="dialog" id="saveForm">
+        <header class="dlg-head">
+            <h2 id="saveTitle">Uložit kolejiště</h2>
+            <button class="x" type="button" data-close aria-label="Zavřít" title="Zavřít (Esc)">&times;</button>
+        </header>
+        <div class="dlg-body">
+            <label class="field">Název souboru
+                <span class="name-row"><input id="saveName" type="text" autocomplete="off" spellcheck="false" required autofocus><span class="ext">.lua</span></span>
+                <small>Pro ORMS se soubor musí jmenovat <code>config.lua</code>. Jiný název se hodí pro zálohy, otevřete ho tlačítkem Otevřít.</small>
+            </label>
+            <div id="saveStatus"></div>
+            <p class="muted small" id="saveWhere"></p>
+        </div>
+        <footer class="dlg-foot">
+            <span class="grow"></span>
+            <button class="btn" type="button" data-close>Zrušit</button>
+            <button class="btn primary" type="submit" data-icon="save">Uložit…</button>
+        </footer>
+    </form>
+</dialog>
+
+<!-- SignalCraft export -->
+<dialog class="dlg wide" id="scDialog" aria-labelledby="scTitulek">
+    <header class="dlg-head">
+        <h2 id="scTitulek">Export do SignalCraftu (EMZZ)</h2>
+        <button class="x" data-close aria-label="Zavřít" title="Zavřít (Esc)">&times;</button>
+    </header>
+    <div class="dlg-body">
+        <div class="sc-radek">
+            <label class="field grow">Název stanice <input id="scNazev" type="text" value="Stanice" autocomplete="off" autofocus></label>
+            <button id="scZkontrolovat" class="btn" type="button">Zkontrolovat znovu</button>
+        </div>
+        <details class="sc-napoveda">
+            <summary>Jak popsat kolejiště pro SignalCraft</summary>
+            <ul>
+                <li><b>L ST1</b>, <b>L ST2</b> … ke zhlaví: stavědlo. Prvky se přiřadí k nejbližšímu stavědlu po kolejích.</li>
+                <li><b>L T1 Jméno stanice</b> u volného konce koleje: trať a sousední stanice.</li>
+                <li><b>L 1</b>, <b>L K. 3</b>, <b>L Kolej 5a</b> nad kolejí: číslo dopravní koleje.</li>
+                <li>Přejezd přes více kolejí nakreslete na každou kolej se stejným názvem, je to jeden přejezd.</li>
+            </ul>
+        </details>
+        <div id="scVysledek" aria-live="polite"></div>
+    </div>
+    <footer class="dlg-foot">
+        <span id="scStav" class="muted grow"></span>
+        <button id="scSkryt" class="btn" type="button" hidden>Skrýt značky v mřížce</button>
+        <button id="scStahnout" class="btn primary" type="button" data-icon="download" disabled>Stáhnout stanici (.json)</button>
+    </footer>
+</dialog>
+
+<!-- shortcuts -->
+<dialog class="dlg" id="keysDialog" aria-labelledby="keysTitle">
+    <header class="dlg-head">
+        <h2 id="keysTitle">Klávesové zkratky a ovládání</h2>
+        <button class="x" data-close aria-label="Zavřít">&times;</button>
+    </header>
+    <div class="dlg-body keys">
+        <table>
+            <tr><th colspan="2">Pohyb a výběr</th></tr>
+            <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>posun o buňku (s <kbd>Ctrl</kbd> o 10)</td></tr>
+            <tr><td><kbd>Shift</kbd> + šipky / klik</td><td>rozšíření výběru</td></tr>
+            <tr><td>tažení myší</td><td>výběr oblasti</td></tr>
+            <tr><td>klik na číslo řádku/sloupce</td><td>výběr celého řádku/sloupce</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>vybrat vše</td></tr>
+            <tr><th colspan="2">Úpravy</th></tr>
+            <tr><td>psaní / <kbd>Enter</kbd> / <kbd>F2</kbd> / dvojklik</td><td>úprava buňky; <kbd>Enter</kbd> potvrdí a jde dolů, <kbd>Tab</kbd> doprava, <kbd>Esc</kbd> zruší</td></tr>
+            <tr><td><kbd>-</kbd> nebo <kbd>=</kbd>, <kbd>|</kbd></td><td>napsané samostatně se změní na ═ a ║</td></tr>
+            <tr><td><kbd>Delete</kbd></td><td>smazat výběr</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>kopírovat, vyjmout, vložit (funguje i z/do Excelu)</td></tr>
+            <tr><td>tažení za okraj výběru</td><td>přesun vybraných buněk, s <kbd>Ctrl</kbd> kopie</td></tr>
+            <tr><td>čtvereček v rohu výběru</td><td>táhnutím zkopíruje výběr do dalších buněk</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>zpět / znovu</td></tr>
+            <tr><th colspan="2">Nástroje a soubory</th></tr>
+            <tr><td>Kolej</td><td>táhněte myší, rovné úseky a oblouky se doplní samy; když začnete nebo skončíte na existující koleji, vznikne výhybka</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>návrat k nástroji Výběr</td></tr>
+            <tr><td>držení kolečka myši + tažení</td><td>posun po kolejišti (i v náhledu)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+kolečko</td><td>zoom mřížky</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>uložit .lua / otevřít soubor</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>export Lua</td></tr>
+            <tr><td><kbd>F1</kbd></td><td>nápověda</td></tr>
         </table>
     </div>
-    <!-- Context menu -->
-    <div class="wrapper">
-        <div class="content">
-            <ul class="menu">
-                <li class="item share">
-                    <div>
-                        <span>Kolej</span>
-                    </div>
-                    <ul class="share-menu">
-                        <li class="item">
-                            <span>═</span>
-                        </li>
-                        <li class="item">
-                            <span>╗</span>
-                        </li>
-                        <li class="item">
-                            <span>╚</span>
-                        </li>
-                        <li class="item">
-                            <span>╔</span>
-                        </li>
-                        <li class="item">
-                            <span>╝</span>
-                        </li>
-                        <li class="item">
-                            <span>║</span>
-                        </li>
-                        <li class="item">
-                            <span>╠</span>
-                        </li>
-                        <li class="item">
-                            <span>╣</span>
-                        </li>
-                        <li class="item">
-                            <span>╦</span>
-                        </li>
-                        <li class="item">
-                            <span>╩</span>
-                        </li>
-                    </ul>
-                </li>
-                <li class="item share">
-                    <div>
-                        <span>Zarážedla</span>
-                    </div>
-                    <ul class="share-menu">
-                        <li class="item">
-                            <span>╡</span>
-                        </li>
-                        <li class="item">
-                            <span>╞</span>
-                        </li>
-                        <li class="item">
-                            <span>╨</span>
-                        </li>
-                        <li class="item">
-                            <span>╥</span>
-                        </li>
-                    </ul>
-                </li>
-                <li class="item share">
-                    <div>
-                        <span>Tunel</span>
-                    </div>
-                    <ul class="share-menu">
-                        <li class="item">
-                            <span>⦘</span>
-                        </li>
-                        <li class="item">
-                            <span>⦗</span>
-                        </li>
-                        <li class="item">
-                            <span>︹</span>
-                        </li>
-                        <li class="item">
-                            <span>︺</span>
-                        </li>
-                    </ul>
-                </li>
-                <li class="item share">
-                    <div>
-                        <span>Návěstidlo</span>
-                    </div>
-                    <ul class="share-menu" id="signals">
-                        <li class="item">
-                            <span>Hlavní</span>
-                        </li>
-                        <li class="item">
-                            <span>Předvěst</span>
-                        </li>
-                        <li class="item">
-                            <span>Seřaďovací</span>
-                        </li>
-                        <li class="item">
-                            <span>Vložené</span>
-                        </li>
-                        <li class="item">
-                            <span>Cestové</span>
-                        </li>
-                    </ul>
-                </li>
-                <li class="item share">
-                    <div>
-                        <span>Vyhybka</span>
-                    </div>
-                    <ul class="share-menu">
-                        <li class="item">
-                            <span>Normální</span>
-                        </li>
-                        <li class="item">
-                            <span>Invertovaná</span>
-                        </li>
-                    </ul>
-                </li>
-                <li class="item">
-                    <span>Název Stanice</span>
-                </li>
-                <li class="item share">
-                    <div>
-                        <span>Přejezd</span>
-                    </div>
-                    <ul class="share-menu">
-                        <li class="item">
-                            <span>╪</span>
-                        </li>
-                        <li class="item">
-                            <span>╫</span>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <script type="module" src="./res/main.js"></script>
-    <script type="module" src="./res/header.js"></script>
-    <script type="module" src="./res/navbar.js"></script>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="drop-overlay" id="dropOverlay" hidden><div>Pusťte soubor .csv nebo .lua</div></div>
+<input type="file" id="fileInput" accept=".csv,.lua,.txt" hidden>
+
+<script type="module" src="./res/app.js"></script>
 </body>
 </html>
