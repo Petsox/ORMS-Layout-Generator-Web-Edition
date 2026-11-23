@@ -426,7 +426,7 @@ function renderInspector(force = false) {
         panel.innerHTML = `
             <div class="ins-head"><div class="ins-title"><b>Výběr ${r.x2 - r.x1 + 1} × ${r.y2 - r.y1 + 1}</b>
             <span>X ${r.x1}–${r.x2} · Y ${r.y1}–${r.y2}</span></div></div>
-            <p class="note">${plural(filled, 'obsazená buňka', 'obsazené buňky', 'obsazených buněk')}. Klik v paletě vyplní celý výběr (názvy se číslují postupně), čtvereček v rohu výběru ho rozkopíruje dál.</p>
+            <p class="note">${plural(filled, 'obsazená buňka', 'obsazené buňky', 'obsazených buněk')}. Tažením za okraj výběr přesunete (s Ctrl zkopírujete). Klik v paletě vyplní celý výběr (názvy se číslují postupně), čtvereček v rohu výběru ho rozkopíruje dál.</p>
             <div class="btn-row">
                 <button class="btn" data-ins="copy" data-icon="copy">Kopírovat</button>
                 <button class="btn danger" data-ins="clear" data-icon="trash">Smazat</button>

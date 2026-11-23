@@ -192,7 +192,7 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .board .hd.row { left: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--cell-line); }
 .board .hd.corner { top: 0; left: 0; z-index: 4; border-right: 1px solid var(--border); cursor: pointer; }
 .board .hd.five { color: var(--muted); }
-.board .hd.on { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.board .hd.on { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--accent); font-weight: 700; }
 .board.tiny .hd.col:not(.five) { color: transparent; }
 .board .hd.col, .board .hd.row { cursor: pointer; }
 
@@ -514,3 +514,11 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 
 /* moving around with the middle mouse button */
 body.panning, body.panning * { cursor: grabbing !important; }
+
+/* moving the selection by its border (like Excel) */
+.board.move-edge .c, .board.move-edge .sel { cursor: move; }
+.board.moving, .board.moving * { cursor: move !important; }
+.board.moving.copying, .board.moving.copying * { cursor: copy !important; }
+.ghost.movebox { width: auto; height: auto; background: var(--accent-soft); outline: 2px dashed var(--accent); outline-offset: -1px; z-index: 1; }
+.ghost.movebox.copy { outline-style: dotted; }
+.ghost.moved { background: color-mix(in srgb, var(--cell-bg) 70%, transparent); outline: none; opacity: .85; }

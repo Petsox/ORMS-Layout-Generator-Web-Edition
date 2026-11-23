@@ -284,6 +284,10 @@ export class Editor {
             const [x, y] = this.cellAt(e.clientX, e.clientY);
             if (e.target === this.handleEl) {
                 drag = { mode: 'fill', from: this.rect };
+            } else if (this.tool === 'select' && !e.shiftKey && this.onSelBorder(e.clientX, e.clientY)) {
+                // drag the selection by its border: move it (with Ctrl: copy), like in Excel
+                drag = { mode: 'move', from: this.rect, start: [x, y], dx: 0, dy: 0, copy: e.ctrlKey };
+                b.classList.add('moving');
             } else if (this.tool === 'select') {
                 this.select(x, y, e.shiftKey, false);
                 drag = { mode: 'select' };
@@ -300,6 +304,13 @@ export class Editor {
                 } else if (drag.mode === 'fill') {
                     drag.to = this.fillTarget(drag.from, mx, my);
                     this.drawFillGhost(drag);
+                } else if (drag.mode === 'move') {
+                    const f = drag.from;
+                    drag.dx = Math.max(-f.x1, Math.min(this.grid.cols - 1 - f.x2, mx - drag.start[0]));
+                    drag.dy = Math.max(-f.y1, Math.min(this.grid.rows - 1 - f.y2, my - drag.start[1]));
+                    drag.copy = ev.ctrlKey || ev.metaKey;
+                    b.classList.toggle('copying', drag.copy);
+                    this.drawMoveGhost(drag);
                 } else {
                     this.extendPath(drag, mx, my);
                     this.drawGhosts(drag);
@@ -311,7 +322,9 @@ export class Editor {
                 clearInterval(autoScroll); autoScroll = null;
                 const d = drag; drag = null;
                 this.ghostsEl.innerHTML = '';
-                if (d.mode === 'fill' && d.to) this.applyFill(d.from, d.to);
+                b.classList.remove('moving', 'copying');
+                if (d.mode === 'move') { if (d.dx || d.dy) this.applyMove(d.from, d.dx, d.dy, d.copy); }
+                else if (d.mode === 'fill' && d.to) this.applyFill(d.from, d.to);
                 else if (d.mode === 'pen') this.applyPen(d.path);
                 else if (d.mode === 'brush') this.applyBrush(d.path);
                 else if (d.mode === 'erase') this.applyErase(d.path);
@@ -336,6 +349,7 @@ export class Editor {
 
         b.addEventListener('mousemove', e => {
             if (this.tool !== 'select' || e.buttons) return;
+            b.classList.toggle('move-edge', !this.editing && e.target !== this.handleEl && this.onSelBorder(e.clientX, e.clientY));
             const [x, y] = this.cellAt(e.clientX, e.clientY, false);
             this.hooks.onHover && this.hooks.onHover(x, y);
         });
@@ -487,6 +501,54 @@ export class Editor {
     }
     applyErase(path) {
         this.grid.edit('Guma', () => { for (const { x, y } of path) this.grid.set(x, y, ''); });
+    }
+
+    // ---------------------------------------------------------- moving the selection by its border
+    /** Is the pointer on the border of the selection (a band a few pixels wide on both sides)? */
+    onSelBorder(clientX, clientY) {
+        const br = this.board.getBoundingClientRect(), r = this.rect, cs = this.cs;
+        const px = clientX - br.left, py = clientY - br.top;
+        const L = HW + r.x1 * cs, T = HH + r.y1 * cs, R = HW + (r.x2 + 1) * cs, B = HH + (r.y2 + 1) * cs;
+        const band = Math.max(4, Math.min(7, cs / 5));
+        const inX = px > L - band && px < R + band, inY = py > T - band && py < B + band;
+        if (!inX || !inY) return false;
+        if (px > R - 12 && py > B - 12) return false; // fill handle corner
+        return Math.abs(px - L) < band || Math.abs(px - R) < band || Math.abs(py - T) < band || Math.abs(py - B) < band;
+    }
+    drawMoveGhost(d) {
+        const f = d.from, cs = this.cs;
+        const x1 = f.x1 + d.dx, y1 = f.y1 + d.dy;
+        let html = `<div class="ghost movebox${d.copy ? ' copy' : ''}" style="left:${HW + x1 * cs}px;top:${HH + y1 * cs}px;width:${(f.x2 - f.x1 + 1) * cs}px;height:${(f.y2 - f.y1 + 1) * cs}px"></div>`;
+        let n = 0;
+        for (let y = f.y1; y <= f.y2 && n < 1500; y++) {
+            for (let x = f.x1; x <= f.x2 && n < 1500; x++) {
+                const t = this.grid.get(x, y);
+                if (!t) continue;
+                n++;
+                html += `<div class="ghost moved" style="left:${HW + (x + d.dx) * cs}px;top:${HH + (y + d.dy) * cs}px">${cellHTML(parseCell(t))}</div>`;
+            }
+        }
+        this.ghostsEl.innerHTML = html;
+        this.hooks.onMoveHint && this.hooks.onMoveHint(d);
+    }
+    applyMove(f, dx, dy, copy) {
+        const block = [];
+        for (let y = f.y1; y <= f.y2; y++) for (let x = f.x1; x <= f.x2; x++) block.push([x, y, this.grid.get(x, y)]);
+        const inSource = (x, y) => x >= f.x1 && x <= f.x2 && y >= f.y1 && y <= f.y2;
+        let overwritten = 0;
+        for (const [x, y, t] of block) {
+            const tx = x + dx, ty = y + dy;
+            if ((copy || !inSource(tx, ty)) && this.grid.get(tx, ty) && this.grid.get(tx, ty) !== t) overwritten++;
+        }
+        this.grid.edit(copy ? 'Kopírování výběru' : 'Přesun výběru', () => {
+            if (!copy) for (const [x, y] of block) this.grid.set(x, y, '');
+            for (const [x, y, t] of block) this.grid.set(x + dx, y + dy, t);
+        });
+        this.sel = { ax: f.x1 + dx, ay: f.y1 + dy, cx: f.x2 + dx, cy: f.y2 + dy };
+        this.updateSelection();
+        if (overwritten && this.hooks.toast) {
+            this.hooks.toast(`Přepsáno ${overwritten} ${overwritten === 1 ? 'buňka' : overwritten < 5 ? 'buňky' : 'buněk'}, vrátíte Ctrl+Z`);
+        }
     }
 
     // ---------------------------------------------------------- fill handle
