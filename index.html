@@ -15,6 +15,10 @@
             <span class="logo" aria-hidden="true"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7"/><path d="M4 13h24M4 19h24"/><path class="lamp" d="M22 9l-6 4 6 4z"/></svg></span>
             <span class="brand-text"><b>ORMS Layout Generator</b><small>v2.0 · Web Edition</small></span>
         </div>
+        <div class="mode seg" role="radiogroup" aria-label="Režim">
+            <button type="button" data-mode="orms" aria-pressed="true" title="Kolejiště pro ORMS (OpenComputers): náhled obrazovky a export config.lua">ORMS</button>
+            <button type="button" data-mode="sc" aria-pressed="false" title="Stanice pro SignalCraft (EMZZ): nastavení stavědel, návěstidel, cest a náhled přístrojů">SignalCraft</button>
+        </div>
 
         <nav class="toolbar" aria-label="Nástroje">
             <div class="tgroup" role="group" aria-label="Soubor">
@@ -38,8 +42,9 @@
                 <button class="tb icon" data-view="preview" data-icon="monitor" title="Jen náhled OpenComputers" aria-label="Jen náhled"></button>
             </div>
             <div class="tgroup">
-                <button class="tb primary" data-action="lua" data-icon="code" title="Vygenerovat config.lua pro ORMS (Ctrl+E)">Export Lua</button>
-                <button class="tb" data-action="signalcraft" data-icon="signal" title="Export stanice pro SignalCraft (EMZZ)">SignalCraft</button>
+                <button class="tb primary only-orms" data-action="lua" data-icon="code" title="Vygenerovat config.lua pro ORMS (Ctrl+E)">Export Lua</button>
+                <button class="tb only-sc" data-action="scCopy" data-icon="copy" title="Zkopírovat stanici do schránky (ve hře: klíč na přístroji v DK → Vložit stanici ze schránky)">Kopírovat stanici</button>
+                <button class="tb primary only-sc" data-action="scDownload" data-icon="download" title="Stáhnout soubor stanice (.json) pro SignalCraft">Stáhnout stanici</button>
             </div>
             <div class="tgroup">
                 <button class="tb icon" data-action="shortcuts" data-icon="keyboard" title="Klávesové zkratky" aria-label="Klávesové zkratky"></button>
@@ -93,6 +98,16 @@
             <div class="preview-foot">
                 <span id="pvInfo">Najeďte myší na náhled.</span>
                 <span id="pvOffset"></span>
+            </div>
+            <div class="sc-ws" id="scWs">
+                <div class="sc-bar">
+                    <h2><span class="sc-logo" aria-hidden="true"></span>SignalCraft · EMZZ</h2>
+                    <label class="sc-name">Stanice <input id="scName" type="text" placeholder="Název stanice" autocomplete="off"></label>
+                    <nav class="sc-tabs" id="scTabs" role="tablist" aria-label="Nastavení SignalCraftu"></nav>
+                    <span class="sc-status" id="scStatus"></span>
+                    <button type="button" class="btn small" id="scRecheck" title="Znovu přečíst kolejiště, přepočítat stanici a zkontrolovat ji">↻ Přepočítat a zkontrolovat</button>
+                </div>
+                <div class="sc-body" id="scBody"></div>
             </div>
         </section>
     </main>
@@ -190,38 +205,6 @@
             <button class="btn primary" type="submit" data-icon="save">Uložit…</button>
         </footer>
     </form>
-</dialog>
-
-<!-- SignalCraft export -->
-<dialog class="dlg wide" id="scDialog" aria-labelledby="scTitulek">
-    <header class="dlg-head">
-        <h2 id="scTitulek">Export do SignalCraftu (EMZZ)</h2>
-        <button class="x" data-close aria-label="Zavřít" title="Zavřít (Esc)">&times;</button>
-    </header>
-    <div class="dlg-body">
-        <div class="sc-radek">
-            <label class="field grow">Název stanice <input id="scNazev" type="text" value="Stanice" autocomplete="off" autofocus></label>
-            <button id="scZkontrolovat" class="btn" type="button">Zkontrolovat znovu</button>
-        </div>
-        <details class="sc-napoveda">
-            <summary>Jak popsat kolejiště pro SignalCraft</summary>
-            <ul>
-                <li><b>L ST1</b>, <b>L ST2</b> … ke zhlaví: stavědlo. Prvky se přiřadí k nejbližšímu stavědlu po kolejích. Bez popisku obsluhuje celou stanici jedno stavědlo ST1.</li>
-                <li><b>L T1 Jméno stanice</b> u volného konce koleje: trať a sousední stanice.</li>
-                <li>Dvoukolejná trať: stejný popisek u obou kolejí. Odjíždí se po pravé koleji, vjíždí po každé koleji s vjezdovým návěstidlem (např. LK pro jízdu po levé koleji v nouzi).</li>
-                <li>Cestová návěstidla <b>Sc</b>, <b>Lc</b>: cesta od nich vede přes skupinové návěstidlo, to se rozsvítí také. Vnitřní hlavní návěstidlo (např. S3a) vlastní cesty nemá, rozsvítí se, když přes něj vede vjezd.</li>
-                <li>Skupinové odjezdové návěstidlo: na každou kolej pod ním dejte vložené návěstidlo <b>VS</b> / <b>VL</b> (nebo cestové Sc / Lc). Vložené ukazuje „Odjezdové návěstidlo dovoluje jízdu“, dokud skupinové dovoluje jízdu.</li>
-                <li><b>L 1</b>, <b>L K. 3</b>, <b>L Kolej 5a</b> nad kolejí: číslo dopravní koleje.</li>
-                <li>Přejezd přes více kolejí nakreslete na každou kolej se stejným názvem, je to jeden přejezd.</li>
-            </ul>
-        </details>
-        <div id="scVysledek" aria-live="polite"></div>
-    </div>
-    <footer class="dlg-foot">
-        <span id="scStav" class="muted grow"></span>
-        <button id="scSkryt" class="btn" type="button" hidden>Skrýt značky v mřížce</button>
-        <button id="scStahnout" class="btn primary" type="button" data-icon="download" disabled>Stáhnout stanici (.json)</button>
-    </footer>
 </dialog>
 
 <!-- shortcuts -->

@@ -10,6 +10,13 @@
 //   "L 1", "L 3a" ...         number of a main track, the label stands next to the track
 //   "L T1 Kamenice"           line at a free end of a track: designation and name of the neighbouring station
 // Signal name prefixes: Pr = distant signal, Se = shunting signal, others are main signals.
+//
+// Everything the export would otherwise guess can be set in the SignalCraft mode of the generator (options.sc, kept
+// with the layout): signal box of an element, kind of a main signal and the tracks of a group signal, "+" / "−" of a
+// switch, which numbered tracks are main tracks, texts of the lines, coupled switches, train routes on or off.
+// The finished station is then loaded by the port of the SignalCraft logic (emzz-model.js) exactly as the game will
+// load it: its errors are export errors and its equipment is the preview of the instruments.
+import { buildModel, natural, SIGNAL_KINDS } from './emzz-model.js';
 
 const DIRS = { N: [0, -1], S: [0, 1], W: [-1, 0], E: [1, 0] };
 const OPPOSITE = { N: 'S', S: 'N', W: 'E', E: 'W' };
@@ -31,17 +38,21 @@ const AXIS = { E: 'WE', W: 'WE', N: 'NS', S: 'NS' };
 const METRES_PER_CELL = 25;
 
 const key = (x, y) => x + ',' + y;
+/** key of a train route in the settings: signal | start track | target (line or track id) */
+export const routeKey = (od, z, na) => [od, z || '', na].join('|');
 const at = (x, y) => `[sloupec ${x + 1}, řádek ${y + 1}]`;
 
 /**
  * @param {string[][]} grid  cell texts by rows (grid[row][column])
- * @param {{name?: string, id?: string}} options
- * @returns {{station: object|null, errors: string[], warnings: string[], assignment: object}}
+ * @param {{name?: string, id?: string, sc?: object}} options  sc = SignalCraft settings of the layout (see scDefaults)
+ * @returns {{station: object|null, errors: string[], warnings: string[], assignment: object, info: object, model: object|null}}
  */
 export function convertToStation(grid, options = {}) {
     const errors = [], warnings = [];
     const cells = new Map();   // key -> track cell
     const labels = [];
+    const sc = options.sc || {};
+    const cfg = name => (sc.prvky && sc.prvky[name]) || {};
 
     // ---------- 1. cells ----------
     for (let y = 0; y < grid.length; y++) {
@@ -53,6 +64,21 @@ export function convertToStation(grid, options = {}) {
             if (c.type === 'label') labels.push(c);
             else cells.set(key(x, y), c);
         }
+    }
+    // validity of a signal in the settings ("platnost"): a main signal valid only for shunting is a shunting signal,
+    // a shunting signal valid for trains is a main signal
+    for (const c of cells.values()) {
+        if (c.type !== 'signal') continue;
+        c.look = c.kind;
+        const v = cfg(c.name).platnost;
+        if (v === 'posun' && c.kind === 'main') c.kind = 'shunt';
+        else if ((v === 'vlak' || v === 'oba') && c.kind === 'shunt') c.kind = 'main';
+    }
+    // a switch with "+" and "−" swapped in the settings
+    for (const c of cells.values()) {
+        if (c.type !== 'switch') continue;
+        c.swapped = !!cfg(c.name).zamenit;
+        if (c.swapped) [c.normal, c.reverse] = [c.reverse, c.normal];
     }
 
     // ---------- 2. connections between neighbouring cells ----------
@@ -186,8 +212,30 @@ export function convertToStation(grid, options = {}) {
         warnings.push('V kolejišti není popisek stavědla: celou stanici obsluhuje jedno stavědlo ST1. ' +
             'Pro dvě stavědla dejte ke zhlavím popisky "L ST1" a "L ST2".');
     }
+    // signal boxes in the order of the settings, otherwise by number (ST1, ST2 …); names and indicators from the settings
+    const boxCfg = id => (sc.stavedla && sc.stavedla[id]) || {};
+    boxes.sort((a, b) => (boxCfg(a.id).poradi ?? 1e9) - (boxCfg(b.id).poradi ?? 1e9) || natural(a.id, b.id));
+    for (const b of boxes) {
+        b.autoName = b.name;
+        if (boxCfg(b.id).nazev) b.name = boxCfg(b.id).nazev;
+        if (boxCfg(b.id).kontrolkyIK) b.indicators = boxCfg(b.id).kontrolkyIK;
+    }
+    // lines: name of the neighbouring station and the texts of the plates from the settings
+    for (const t of lines) {
+        const o = (sc.trate && sc.trate[t.id]) || {};
+        t.autoName = t.name;
+        t.twin = lines.filter(u => u.label === t.label && u.name === t.name).length > 1;
+        t.autoExit = t.exitTrack;
+        if (o.nazev) t.name = o.nazev;
+        t.fromText = o.od || 'z ' + t.name;
+        t.toText = o.do || 'do ' + t.name;
+        t.shortName = o.zkratka || null;
+        if (o.odjezd === false) t.exitTrack = false;
+        else if (o.odjezd === true) t.exitTrack = true;
+    }
 
-    const trackNumbers = new Map(); // edge -> number
+    const trackNumbers = new Map(); // edge -> number (main tracks)
+    const labelNumbers = new Map(); // edge -> number written at it (also a track that is not a main track)
     for (const p of labels.filter(p => p.number)) {
         // the nearest track; at the same distance the one below the label (numbers are written above the track)
         let e = null, best = 4;
@@ -207,7 +255,10 @@ export function convertToStation(grid, options = {}) {
             continue;
         }
         trackNumbers.set(e, p.number);
+        labelNumbers.set(e, p.number);
     }
+    // a numbered track that is not a main track in the settings (e.g. a connecting track): routes run over it
+    for (const [e, n] of [...trackNumbers]) if (sc.koleje && sc.koleje[n] && sc.koleje[n].dopravni === false) trackNumbers.delete(e);
 
     // ---------- 6. assignment to signal boxes (nearest along the tracks) ----------
     const assignment = {};
@@ -244,7 +295,14 @@ export function convertToStation(grid, options = {}) {
         const box = (distance.get(key(c.x, c.y)) || [])[1] || (boxes.length === 1 && boxes[0].whole ? boxes[0].id : undefined);
         if (!box && boxes.length) errors.push(`${at(c.x, c.y)} ${typeName(c)} ${c.name}: žádné stavědlo k němu nevede po kolejích`);
         c.box = box;
-        if (c.name) assignment[typeName(c) + ' ' + c.name] = box;
+        c.autoBox = box;
+        // signal box chosen in the settings
+        const want = c.name && cfg(c.name).stavedlo;
+        if (want && want !== box) {
+            if (boxes.some(b => b.id === want)) c.box = want;
+            else warnings.push(`${at(c.x, c.y)} ${typeName(c)} ${c.name}: stavědlo ${want} z nastavení v kolejišti není, platí ${box}`);
+        }
+        if (c.name) assignment[typeName(c) + ' ' + c.name] = c.box;
     }
 
     // ---------- 7. names, duplicates ----------
@@ -268,7 +326,7 @@ export function convertToStation(grid, options = {}) {
     let counter = 0;
     for (const e of edges) {
         const line = lines.find(t => t.end === e.a || t.end === e.b);
-        if (trackNumbers.has(e)) e.id = 'k' + trackNumbers.get(e);
+        if (labelNumbers.has(e)) e.id = 'k' + labelNumbers.get(e);
         else if (line) e.id = 't_' + line.id;
         else e.id = 'u' + (++counter);
     }
@@ -297,59 +355,127 @@ export function convertToStation(grid, options = {}) {
         return null;
     }
 
-    // ---------- 10. train routes ----------
-    const routes = [];
-    const lineUse = new Map(lines.map(t => [t, { entry: false, exit: false }]));
-    // an exit route continues past a main signal in its direction (route signals Sc / Lc before a group exit
-    // signal, ORMS "repeater"); the signals it passes show the route too (mijene = main signals the route may pass)
-    // An inner main signal (e.g. S3a at the end of track 3a, its trains go on only past another main signal) has no
-    // routes, point lock or signal block of its own: entry routes pass it and it shows their aspect.
-    // a route that turns back to the other end of the station (a switch drawn the wrong way round, its point on the
-    // other side) is not a route: it is reported instead
+    // ---------- 10. kinds of main signals ----------
+    // automatic kind, the settings may change it ("druh"): vjezdové (a line behind it), odjezdové, skupinové (stands in
+    // the switch zone, valid for several tracks), cestové (Sc / Lc: repeats the next main signal), vložené (VS / VL on a
+    // track under a group signal), vnitřní (e.g. S3a: its trains go on only past another main signal; no routes)
     const turnedBack = new Map();
+    const overTrack = new Map(); // exit signal -> main tracks its routes would cross without a signal at their end
+    let permissive = false;      // search also over main tracks: which lines the signal would reach that way
     const horizontal = d => (d === 'E' || d === 'W' ? d : null);
-    const found = [];
     let inner = new Set();
     const mains = signals.filter(c => c.kind === 'main' && c.track);
-    for (const c of mains.filter(c => !c.entry)) {
+    for (const c of mains) c.autoKind = c.entry ? 'vjezdove' : /^(Sc|Lc)/.test(c.name) ? 'cestove' : /^(VS|VL)/.test(c.name) ? 'vlozene' : 'odjezdove';
+    for (const c of mains.filter(c => c.autoKind === 'odjezdove')) {
         const targets = new Map();
         search(c, c.dir, new Set(), targets, false, [], c);
-        found.push({ c, targets });
+        if (targets.size && [...targets.values()].every(t => !t.direct)) c.autoKind = 'vnitrni';
     }
-    for (const { c, targets } of found) {
-        if (!/^(Sc|Lc|VS|VL)/.test(c.name) && targets.size && [...targets.values()].every(t => !t.direct)) inner.add(c.name);
+    turnedBack.clear(); overTrack.clear();
+    for (const c of mains) {
+        c.behind = c.autoKind === 'vjezdove' || trackNumbers.has(c.track) ? [] : tracksBehind(c);
+        if (c.autoKind === 'odjezdove' && c.behind.length) c.autoKind = 'skupinove';
+        const want = cfg(c.name).druh;
+        c.sigKind = want && SIGNAL_KINDS.includes(want) ? want : c.autoKind;
+        c.entry = c.sigKind === 'vjezdove';
+        if (c.entry && !lineBehind(c, c.track)) warnings.push(`${at(c.x, c.y)} vjezdové návěstidlo ${c.name}: za ním není trať (bez výhybky a jiného hlavního návěstidla)`);
     }
-    for (const c of mains.filter(c => c.entry)) {
+    inner = new Set(mains.filter(c => c.sigKind === 'vnitrni').map(c => c.name));
+
+    /**
+     * Main tracks a group exit signal in the switch zone is valid for: against its direction, the first numbered track
+     * on every branch. A track with its own inserted / route signal in front of the group signal (VS, Sc) is "by" it.
+     */
+    function tracksBehind(c) {
+        const out = [];
+        const walk = (node, dir, visited) => {
+            const e = edgeAt(node, dir);
+            if (!e || visited.has(e)) return;
+            visited = new Set(visited).add(e);
+            if (e !== c.track && trackNumbers.has(e)) { if (!out.some(b => b.edge === e)) out.push({ edge: e, by: null }); return; }
+            const n = other(e, node), into = entryInto(e, node);
+            if (n.type === 'signal' && n.kind === 'main' && n.dir === c.dir) {
+                const own = edgeAt(n, OPPOSITE[n.dir]);
+                if (own && trackNumbers.has(own) && !out.some(b => b.edge === own)) out.push({ edge: own, by: n.name });
+                return;
+            }
+            if (n.type === 'switch') {
+                if (into === n.point) { walk(n, n.normal, visited); walk(n, n.reverse, visited); }
+                else walk(n, n.point, visited);
+                return;
+            }
+            if (n.dirs.length === 2 && !isEnd(n)) walk(n, n.dirs.find(s => s !== into), visited);
+        };
+        walk(c, OPPOSITE[c.dir], new Set());
+        return out;
+    }
+
+    // ---------- 11. train routes ----------
+    // an exit route continues past a main signal in its direction (route signals Sc / Lc before a group exit
+    // signal, ORMS "repeater"); the signals it passes show the route too (mijene = main signals the route may pass).
+    // An inner main signal has no routes, point lock or signal block of its own: entry routes pass it.
+    // A group exit signal in the switch zone has a route from every track it is valid for ("z" = start track), except
+    // the tracks with their own inserted / route signal. A route that turns back to the other end of the station (a
+    // switch drawn the wrong way round) is not a route: it is reported instead.
+    const lineUse = new Map(lines.map(t => [t, { entry: false, exit: false }]));
+    const found = [];
+    const routeList = [];  // every route the layout gives: {key, od, z, na, mijene, auto}
+    const off = new Set((sc.cesty && sc.cesty.vypnute) || []);
+    for (const c of mains) {
+        if (c.sigKind === 'vnitrni') continue;
+        if (c.entry) { const line = lineBehind(c, c.track); if (line) lineUse.get(line).entry = true; }
         const targets = new Map();
-        const line = lineBehind(c, c.track);
-        if (line) lineUse.get(line).entry = true;
-        search(c, c.dir, new Set(), targets, true, [], c);
+        search(c, c.dir, new Set(), targets, c.entry, [], c);
         found.push({ c, targets });
-    }
-    // exits of inner signals are not routes: the lines are used only by the real routes
-    for (const t of lines) lineUse.get(t).exit = false;
-    for (const { c, targets } of found) {
-        if (c.entry || inner.has(c.name)) continue;
-        for (const id of targets.keys()) { const l = lines.find(t => t.id === id); if (l) lineUse.get(l).exit = true; }
-    }
-    // a group exit signal standing in the switch zone, passed by the routes of route signals, has no routes of its own
-    // (no train can stand in front of it)
-    const passedAll = new Set();
-    for (const f of found) if (!inner.has(f.c.name)) for (const t of f.targets.values()) for (const n of t.passed) passedAll.add(n);
-    for (const { c, targets } of found) {
-        if (inner.has(c.name)) continue;
-        if (passedAll.has(c.name) && !trackNumbers.has(c.track)) continue;
-        const to = [...targets.keys()];
-        if (!to.length) {
-            warnings.push(`${at(c.x, c.y)} od návěstidla ${c.name} nevede žádná vlaková cesta ` +
-                (c.entry ? '(na číslovanou dopravní kolej)' : 'na trať, zůstane na Stůj'));
+        let starts = [null];
+        if (c.sigKind === 'skupinove' && !trackNumbers.has(c.track)) {
+            const want = cfg(c.name).koleje;
+            const free = c.behind.filter(b => !b.by);
+            starts = Array.isArray(want) ? free.filter(b => want.map(String).includes(labelNumbers.get(b.edge))).map(b => b.edge) : free.map(b => b.edge);
+            if (Array.isArray(want)) {
+                // ["-"] = the settings switched all tracks off
+                for (const n of want) if (n !== '-' && !free.some(b => labelNumbers.get(b.edge) === String(n))) {
+                    warnings.push(`${at(c.x, c.y)} skupinové návěstidlo ${c.name}: kolej ${n} pod ním není (nebo má vlastní vložené / cestové návěstidlo)`);
+                }
+            }
+            if (!starts.length) continue; // every track has its own signal (VS / Sc): no routes of its own
+        }
+        if (!targets.size) {
+            warnings.push(`${at(c.x, c.y)} od návěstidla ${c.name} nevede žádná vlaková cesta ` + (c.entry ? '(na číslovanou dopravní kolej)' : 'na trať, zůstane na Stůj'));
             continue;
         }
-        const r = { od: c.name, na: to.length === 1 ? to[0] : to };
-        const passed = [...new Set([...targets.values()].flatMap(t => t.passed))];
-        if (passed.length) r.mijene = passed;
-        routes.push(r);
+        for (const z of starts) {
+            for (const [id, t] of targets) {
+                const k = routeKey(c.name, z && z.id, id);
+                routeList.push({ key: k, od: c.name, z: z ? z.id : null, na: id, mijene: [...new Set(t.passed)], auto: true, off: off.has(k) });
+            }
+        }
     }
+    for (const r of (sc.cesty && sc.cesty.pridane) || []) {
+        const k = routeKey(r.od, r.z || null, r.na);
+        if (routeList.some(x => x.key === k)) continue;
+        routeList.push({ key: k, od: r.od, z: r.z || null, na: r.na, mijene: r.mijene || [], auto: false, off: off.has(k) });
+    }
+    const pres = (sc.cesty && sc.cesty.pres) || {};
+    const routes = [];
+    for (const r of routeList) {
+        if (r.off) continue;
+        // routes of one signal from one track with the same passed signals and forced positions form one record
+        const via = pres[r.key];
+        const rec = routes.find(x => x.od === r.od && (x.z || null) === r.z && JSON.stringify(x.mijene || []) === JSON.stringify(r.mijene)
+            && JSON.stringify(x.pres || null) === JSON.stringify(via || null));
+        if (rec) { rec.na = [].concat(rec.na, r.na); continue; }
+        const out = { od: r.od };
+        if (r.z) out.z = r.z;
+        out.na = r.na;
+        if (r.mijene.length) out.mijene = r.mijene;
+        if (via && Object.keys(via).length) out.pres = via;
+        routes.push(out);
+        const l = lines.find(t => t.id === r.na);
+        if (l) lineUse.get(l).exit = true;
+    }
+    for (const r of routes) if (Array.isArray(r.na) && r.na.length === 1) r.na = r.na[0];
+
     function search(node, dir, visited, targets, entry, passed, start) {
         const add = id => {
             if (!targets.has(id)) targets.set(id, { direct: false, passed: [] });
@@ -368,6 +494,21 @@ export function convertToStation(grid, options = {}) {
             const back = horizontal(start.dir) && (start.dir === 'W') !== (line.end.x < centre);
             if (!entry && back) turnedBack.set(start.name, line.name);
             else if (!entry && line.exitTrack !== false) add(line.id);
+            return;
+        }
+        // an entry route ends on the first numbered (main) track it runs onto, also when no signal stands at its end
+        // (tracks under a group exit signal); a signal at the end is handled below (inner signals are passed)
+        if (entry && trackNumbers.has(e) && !(next.type === 'signal' && next.kind === 'main' && next.dir === OPPOSITE[into])) {
+            const travel = OPPOSITE[into];
+            if (horizontal(start.dir) && horizontal(travel) && start.dir !== travel) { turnedBack.set(start.name, 'kolej ' + trackNumbers.get(e)); return; }
+            add(e.id);
+            return;
+        }
+        // an exit route does not run over another main track of the station (StavedloSim), only up to a signal at its
+        // end that it passes (a group or inner signal)
+        if (!permissive && !entry && trackNumbers.has(e) && e !== start.track && !(next.type === 'signal' && next.kind === 'main' && next.dir === OPPOSITE[into])) {
+            if (!overTrack.has(start.name)) overTrack.set(start.name, new Set());
+            overTrack.get(start.name).add(trackNumbers.get(e));
             return;
         }
         if (next.type === 'signal' && next.kind === 'main' && next.dir === OPPOSITE[into]) {
@@ -392,13 +533,27 @@ export function convertToStation(grid, options = {}) {
         else if (isEnd(next) && entry && trackNumbers.has(e)) add(e.id);
     }
 
+    // reported only when a line cannot be reached because of a main track on the way
+    for (const [name, tracks] of overTrack) {
+        const f = found.find(x => x.c.name === name);
+        if (!f || inner.has(name)) continue;
+        const all = new Map();
+        permissive = true;
+        search(f.c, f.c.dir, new Set(), all, false, [], f.c);
+        permissive = false;
+        const missing = [...all.keys()].filter(id => !f.targets.has(id)).map(id => lines.find(t => t.id === id)).filter(Boolean);
+        if (!missing.length) continue;
+        warnings.push(`${at(f.c.x, f.c.y)} odjezd od návěstidla ${name} do ${missing.map(t => t.name).join(', ')} by vedl přes dopravní kolej ` +
+            `${[...tracks].join(', ')}; vlaková cesta přes jinou dopravní kolej v EMZZ nejde – na konec té koleje dejte odjezdové návěstidlo, ` +
+            `nebo v nastavení SignalCraftu (Koleje) kolej označte jako nedopravní`);
+    }
     for (const [name, where] of turnedBack) {
         const c = signals.find(x => x.name === name);
         warnings.push(`${at(c.x, c.y)} od návěstidla ${name} by vlaková cesta vedla zpět na druhý konec stanice (${where}); ` +
             'nejspíš je některá výhybka nakreslená obráceně (hrot na špatné straně), taková cesta se nevytvoří');
     }
 
-    // ---------- 11. checks of lines and tracks ----------
+    // ---------- 12. checks of lines and tracks ----------
     for (const t of lines) {
         const u = lineUse.get(t);
         if (!u.entry && !u.exit) warnings.push(`${at(t.end.x, t.end.y)} trať ${t.id}: nevede na ni ani z ní žádná vlaková cesta`);
@@ -414,7 +569,7 @@ export function convertToStation(grid, options = {}) {
 
     // ---------- crossovers: two switches joined directly by their reverse branches are thrown together ----------
     // (spřažené výhybky, one point lever; otherwise a train could run from one track into the other's flank)
-    const coupled = [];
+    const coupledAuto = [];
     // the diverging branch is the one not opposite the point (the "+" glyph of ORMS may be the curved one)
     const diverging = c => { const d = [c.normal, c.reverse].filter(x => x !== OPPOSITE[c.point]); return d.length === 1 ? d[0] : null; };
     for (const a of cells.values()) {
@@ -422,52 +577,100 @@ export function convertToStation(grid, options = {}) {
         const e = edgeAt(a, diverging(a));
         const b = e && other(e, a);
         if (!b || b.type !== 'switch' || b === a || !diverging(b) || edgeAt(b, diverging(b)) !== e || a.name > b.name) continue;
-        if (a.box !== b.box) {
-            // one lever: both belong to the signal box of the first one
-            b.box = a.box;
-            assignment[typeName(b) + ' ' + b.name] = a.box;
+        coupledAuto.push([a.name, b.name]);
+    }
+    // the settings may add couplings and drop the automatic ones
+    const pairKey = p => [...p].sort(natural).join('/');
+    const dropped = new Set(((sc.sprazene && sc.sprazene.odebrat) || []).map(pairKey));
+    const coupled = coupledAuto.filter(p => !dropped.has(pairKey(p)));
+    const switchNames = new Set([...cells.values()].filter(c => c.type === 'switch').map(c => c.name));
+    for (const p of (sc.sprazene && sc.sprazene.pridat) || []) {
+        if (p.some(n => !switchNames.has(n))) { warnings.push(`spřažení ${p.join('/')} z nastavení: výhybka ${p.find(n => !switchNames.has(n))} v kolejišti není`); continue; }
+        if (!coupled.some(q => pairKey(q) === pairKey(p))) coupled.push([...p]);
+    }
+    for (const [an, bn] of coupled) {
+        const a = [...cells.values()].find(c => c.type === 'switch' && c.name === an), b = [...cells.values()].find(c => c.type === 'switch' && c.name === bn);
+        if (a.box === b.box) continue;
+        if (cfg(an).stavedlo || cfg(bn).stavedlo) {
+            errors.push(`${at(b.x, b.y)} spřažené výhybky ${an}/${bn} mají jednu výměnovou kličku, musí patřit jednomu stavědlu (nastaveno ${a.box} a ${b.box})`);
+            continue;
         }
-        coupled.push([a.name, b.name]);
+        // one lever: both belong to the signal box of the first one
+        b.box = a.box;
+        assignment[typeName(b) + ' ' + b.name] = a.box;
     }
 
-    if (errors.length) return { station: null, errors, warnings, assignment };
+    // ---------- what the settings show: every element with its automatic and chosen values ----------
+    const crossingNames = [...new Set([...cells.values()].filter(c => c.type === 'crossing').map(c => c.name))];
+    // a main signal: only for trains (no shunt lever) or for trains and shunting (shunt lever with a red plate);
+    // automatically an entry or inner signal is only for trains, the others for both (as StavedloSim)
+    function autoValidity(c) { return c.look === 'shunt' ? 'posun' : c.sigKind === 'vjezdove' || c.sigKind === 'vnitrni' ? 'vlak' : 'oba'; }
+    function validity(c) { const v = cfg(c.name).platnost; return v === 'vlak' || v === 'oba' ? v : c.look === 'shunt' ? 'oba' : autoValidity(c); }
+    const info = {
+        boxes: boxes.map(b => ({ id: b.id, name: b.name, autoName: b.autoName, indicators: b.indicators || 'pristroj' })),
+        signals: mains.map(c => ({
+            name: c.name, x: c.x, y: c.y, box: c.box, autoBox: c.autoBox, kind: c.sigKind, autoKind: c.autoKind,
+            behind: (c.behind || []).map(b => ({ number: labelNumbers.get(b.edge), by: b.by })),
+            tracks: cfg(c.name).koleje || null, validity: validity(c), autoValidity: autoValidity(c),
+        })).sort((a, b) => natural(a.name, b.name)),
+        shunts: signals.filter(c => c.kind === 'shunt').map(c => ({
+            name: c.name, x: c.x, y: c.y, box: c.box, autoBox: c.autoBox, validity: 'posun', autoValidity: c.look === 'shunt' ? 'posun' : 'oba',
+        })).sort((a, b) => natural(a.name, b.name)),
+        switches: [...cells.values()].filter(c => c.type === 'switch').map(c => ({
+            name: c.name, x: c.x, y: c.y, box: c.box, autoBox: c.autoBox, swapped: c.swapped, speed: cfg(c.name).rychlost || null,
+            plus: c.normal === OPPOSITE[c.point] ? 'přímo' : 'do odbočky', minus: c.reverse === OPPOSITE[c.point] ? 'přímo' : 'do odbočky',
+        })).sort((a, b) => natural(a.name, b.name)),
+        crossings: crossingNames.map(n => { const c = [...cells.values()].find(x => x.type === 'crossing' && x.name === n); return { name: n, x: c.x, y: c.y, box: c.box, autoBox: c.autoBox }; }),
+        tracks: [...labelNumbers].map(([e, n]) => ({ number: n, main: trackNumbers.has(e), x: e.points[1] ? e.points[1][0] : e.a.x, y: e.points[1] ? e.points[1][1] : e.a.y }))
+            .sort((a, b) => natural(a.number, b.number)),
+        lines: lines.map(t => ({
+            id: t.id, code: t.code, name: t.name, autoName: t.autoName, fromText: t.fromText, toText: t.toText, shortName: t.shortName,
+            twin: t.twin, exit: t.exitTrack !== false, autoExit: t.autoExit !== false, x: t.end.x, y: t.end.y,
+        })),
+        routes: routeList, coupledAuto, coupled,
+        trackName: id => { const e = edges.find(x => x.id === id); return e && labelNumbers.has(e) ? labelNumbers.get(e) : id; },
+        lineName: id => { const l = lines.find(t => t.id === id); return l ? l.name : null; },
+    };
 
-    // ---------- 12. output in the StavedloSim format ----------
+    if (errors.length) return { station: null, errors, warnings, assignment, info, model: null };
+
+    // ---------- 13. output in the StavedloSim format ----------
     const xs = [...cells.values()].map(c => c.x);
     const middle = (Math.min(...xs) + Math.max(...xs)) / 2;
     const nodeIds = {};
     for (const [k, id] of nodes) { const [x, y] = k.split(',').map(Number); nodeIds[id] = [x, y]; }
-    const name = options.name || 'Stanice';
+    const name = (sc.stanice && sc.stanice.nazev) || options.name || 'Stanice';
     const station = {
         id: options.id || slug(name),
         nazev: name,
         popis: 'Export z ORMS Layout Generatoru pro SignalCraft',
         zz: 'EMZZ',
         meritko: METRES_PER_CELL,
-        stavedla: boxes.map(s => ({ id: s.id, nazev: s.name })),
+        stavedla: boxes.map(s => ({ id: s.id, nazev: s.name, ...(s.indicators ? { kontrolkyIK: s.indicators } : {}) })),
         vyhybkarskeOkruhy: [boxes.map(s => s.id)],
         uzly: nodeIds,
         koleje: edges.map(e => {
             const k = { id: e.id, z: nodes.get(key(e.a.x, e.a.y)), do: nodes.get(key(e.b.x, e.b.y)), delka: e.cells * METRES_PER_CELL };
             if (e.points.length > 2) k.body = e.points.slice(1, -1);
             if (trackNumbers.has(e)) k.cislo = trackNumbers.get(e);
+            else if (labelNumbers.has(e)) k.oznaceni = labelNumbers.get(e);
             return k;
         }),
         vyhybky: [...cells.values()].filter(c => c.type === 'switch').map(c => ({
             id: c.name, uzel: nodes.get(key(c.x, c.y)),
             hrot: edgeAt(c, c.point).id, plus: edgeAt(c, c.normal).id, minus: edgeAt(c, c.reverse).id,
-            stavedlo: c.box, ...(c.inverted ? { invertovana: true } : {}),
+            stavedlo: c.box, ...(c.inverted ? { invertovana: true } : {}), ...(cfg(c.name).rychlost ? { rychlost: +cfg(c.name).rychlost } : {}),
         })),
         sprazene: coupled,
         trate: lines.map(t => {
             const e = edges.find(e => e.a === t.end || e.b === t.end);
             return {
                 id: t.id, oznaceni: t.code, uzel: nodes.get(key(t.end.x, t.end.y)), kolej: e.id, nazev: t.name,
-                od: 'z ' + t.name, do: 'do ' + t.name, strana: t.end.x < middle ? 'L' : 'S', provoz: t.traffic,
+                od: t.fromText, do: t.toText, ...(t.shortName ? { zkratka: t.shortName } : {}), strana: t.end.x < middle ? 'L' : 'S', provoz: t.traffic,
             };
         }),
         navestidla: [], posunova: [], predvesti: [],
-        prejezdy: [...new Set([...cells.values()].filter(c => c.type === 'crossing').map(c => c.name))].map(name => {
+        prejezdy: crossingNames.map(name => {
             const parts = [...cells.values()].filter(c => c.type === 'crossing' && c.name === name);
             return {
                 id: name, nazev: 'Přejezd ' + name, x: parts[0].x,
@@ -478,7 +681,7 @@ export function convertToStation(grid, options = {}) {
     };
     for (const c of signals.filter(c => c.track)) {
         const rec = { id: c.name, uzel: nodes.get(key(c.x, c.y)), kolej: c.track.id, stavedlo: c.box };
-        if (c.kind === 'main') station.navestidla.push({ ...rec, typ: c.entry ? 'vjezdove' : 'odjezdove' });
+        if (c.kind === 'main') station.navestidla.push({ ...rec, typ: c.entry ? 'vjezdove' : 'odjezdove', druh: c.sigKind, platnost: validity(c) });
         else if (c.kind === 'shunt') station.posunova.push(rec);
     }
     for (const e of edges) {
@@ -490,7 +693,19 @@ export function convertToStation(grid, options = {}) {
     for (const p of station.predvesti) {
         if (!mainNames.has(p.patri)) warnings.push(`předvěst ${p.id}: v kolejišti není hlavní návěstidlo ${p.patri}`);
     }
-    return { station, errors, warnings, assignment };
+
+    // ---------- 14. the station loaded as SignalCraft loads it ----------
+    const model = buildModel(station);
+    if (model.errors.length) {
+        for (const m of model.errors) errors.push('SignalCraft: ' + m);
+        return { station: null, errors, warnings, assignment, info, model };
+    }
+    // a route over switches of other signal boxes: each of them locks its part (information)
+    const notes = [];
+    for (const r of model.st.routes.values()) {
+        if (r.helpers.length) notes.push(`cesta ${r.name} vede i přes výhybky ${r.helpers.join(', ')}: to stavědlo je zamkne kolejovým závěrníkem a dá souhlasovým hradlem souhlas ${r.box}; bez souhlasu ${r.box} neuzavře závěr výměn`);
+    }
+    return { station, errors, warnings, notes, assignment, info, model };
 }
 
 function parseCell(t, x, y, errors) {
@@ -502,8 +717,12 @@ function parseCell(t, x, y, errors) {
         const common = [...a].filter(s => b.includes(s));
         if (common.length !== 1) { errors.push(`${at(x, y)} výhybka ${name}: symboly "${t[0]}" a "${t[4]}" nemají právě jeden společný konec (hrot)`); return null; }
         const point = common[0];
-        const normal = [...a].find(s => s !== point), reverse = [...b].find(s => s !== point);
-        // first symbol = normal position (+), second = reverse (−)
+        let normal = [...a].find(s => s !== point), reverse = [...b].find(s => s !== point);
+        // in ORMS the first symbol is the "+" position; for the interlocking "+" is the straight track and "−" the
+        // diverging one (whatever order the symbols are in), so that a crossover is thrown by one lever ("−" both)
+        // and a SignalCraft switch is straight in its normal position; a symmetric switch keeps the ORMS order
+        const straight = { N: 'S', S: 'N', E: 'W', W: 'E' }[point];
+        if (reverse === straight && normal !== straight) [normal, reverse] = [reverse, normal];
         return { type: 'switch', name, point, normal, reverse, dirs: [point, normal, reverse], inverted: t[2] === 'I', x, y };
     }
     if (t.length > 2 && t[2] === 'N') {

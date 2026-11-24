@@ -176,7 +176,8 @@ export class Editor {
             if (old.get(k) === marks.get(k)) continue;
             const x = k % this.grid.cols, y = Math.floor(k / this.grid.cols);
             const el = this.cellsEl[y][x];
-            el.classList.remove('e-error', 'e-warn', 'e-info', 'sc-error', 'sc-warn');
+            // every mark class: checks (e-*), SignalCraft messages (sc-*) and the colour of the signal box (scb, scb-N)
+            for (const cls of [...el.classList]) if (/^(e-|sc-|scb)/.test(cls)) el.classList.remove(cls);
             for (const cls of (marks.get(k) || '').trim().split(' ').filter(Boolean)) el.classList.add(cls);
         }
     }

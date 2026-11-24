@@ -8,7 +8,7 @@ import {
 import { validate } from './validate.js';
 import { gridToConfig, configToLua, parseLua, parseCSV, download } from './lua.js';
 import { buildScreen, paintScreen, centerOffset, switchLabel, signalLabel, COLORS, SCREEN_W, SCREEN_H } from './orms-render.js';
-import { initSignalCraft } from './signalcraft-ui.js';
+import { initSignalCraft, settingsToLua, settingsFromLua } from './signalcraft-ui.js';
 import { DEMO_LUA } from './demo.js';
 
 const $ = s => document.querySelector(s);
@@ -21,7 +21,7 @@ const store = {
     set(k, v) { try { localStorage.setItem('ormslg2.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
 };
 const settings = Object.assign({
-    view: 'split', cs: 30, center: true, swNames: true, sigNames: true, faithful: true, pvGrid: false, pvZoom: 'fit', split: 58, tab: 'cell',
+    mode: 'orms', scTab: 'prehled', view: 'split', cs: 30, center: true, swNames: true, sigNames: true, faithful: true, pvGrid: false, pvZoom: 'fit', split: 58, tab: 'cell',
 }, store.get('settings', {}));
 const saveSettings = () => store.set('settings', settings);
 
@@ -120,7 +120,7 @@ function recompute() {
     renderPreview(cfg0);
     $('#emptyState').hidden = check.stats.cells > 0 || emptyDismissed;
 }
-grid.onChange(() => { scheduleRecompute(); scheduleAutosave(); updateUndoButtons(); });
+grid.onChange(() => { scheduleRecompute(); scheduleAutosave(); updateUndoButtons(); if (started) signalCraft.schedule(); });
 
 function applyMarks() {
     const marks = new Map();
@@ -167,6 +167,17 @@ function setView(view) {
     for (const b of document.querySelectorAll('[data-view]')) if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.view === view));
     requestAnimationFrame(() => paintPreview());
 }
+/** ORMS: preview of the OpenComputers screen and config.lua; SignalCraft: settings and preview of the EMZZ instruments */
+function setMode(mode) {
+    settings.mode = mode === 'sc' ? 'sc' : 'orms'; saveSettings();
+    app.dataset.mode = settings.mode;
+    for (const b of document.querySelectorAll('button[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === settings.mode));
+    if (settings.mode === 'sc' && settings.view === 'editor') setView('split');
+    signalCraft.activate(settings.mode === 'sc');
+    if (settings.mode === 'orms') { scMarks = new Map(); applyMarks(); }
+    inspectorKey = ''; renderInspector();
+    requestAnimationFrame(() => paintPreview());
+}
 function updateUndoButtons() {
     $('[data-action="undo"]').disabled = !grid.undoStack.length;
     $('[data-action="redo"]').disabled = !grid.redoStack.length;
@@ -177,15 +188,29 @@ const actions = {
     new() {
         if (grid.isEmpty()) return;
         grid.clear('Nové kolejiště');
+        const old = signalCraft.settings;
+        signalCraft.replace({});
         projectName = 'config'; store.set('projectName', projectName);
-        toast('Kolejiště vymazáno', { action: { label: 'Vrátit', fn: () => grid.undo() } });
+        toast('Kolejiště vymazáno', { action: { label: 'Vrátit', fn: () => { grid.undo(); signalCraft.replace(old); } } });
     },
     open() { $('#fileInput').value = ''; $('#fileInput').click(); },
     save: () => openSaveDialog(),
     undo() { const l = grid.undo(); if (l) toast('Zpět: ' + l); },
     redo() { const l = grid.redo(); if (l) toast('Znovu: ' + l); },
     lua: openLuaDialog,
-    signalcraft: () => signalCraft.open(),
+    signalcraft: () => setMode('sc'),
+    scDownload() {
+        const st = signalCraft.result && signalCraft.result.station;
+        if (!st) { toast('Stanice má chyby, nejde stáhnout', { error: true }); return; }
+        download(st.id + '.json', JSON.stringify(st, null, 1), 'application/json');
+        toast('Stanice stažena jako ' + st.id + '.json');
+    },
+    async scCopy() {
+        const st = signalCraft.result && signalCraft.result.station;
+        if (!st) { toast('Stanice má chyby, nejde zkopírovat', { error: true }); return; }
+        try { await navigator.clipboard.writeText(JSON.stringify(st)); toast('Stanice je ve schránce: ve hře klíč na přístroj v DK → Vložit stanici ze schránky'); }
+        catch (e) { toast('Schránka není dostupná, použijte Stáhnout stanici', { error: true }); }
+    },
     shortcuts: () => $('#keysDialog').showModal(),
     zoomIn() { editor.zoomBy(1.15); settings.cs = editor.cs; saveSettings(); updateZoom(); },
     zoomOut() { editor.zoomBy(1 / 1.15); settings.cs = editor.cs; saveSettings(); updateZoom(); },
@@ -199,6 +224,8 @@ document.addEventListener('click', e => {
     if (t) { setTool(t.dataset.tool); return; }
     const v = e.target.closest('button[data-view]');
     if (v) setView(v.dataset.view);
+    const m = e.target.closest('button[data-mode]');
+    if (m) setMode(m.dataset.mode);
 });
 
 document.addEventListener('keydown', e => {
@@ -234,9 +261,12 @@ function openFile(file) {
             if (isLua) {
                 const r = parseLua(text);
                 if (!r.count) { toast('V souboru nejsou žádné položky Config.Tracks/Signals/…', { error: true }); return; }
-                loadTexts(r.texts, `Načteno ${plural(r.count, 'položka', 'položky', 'položek')} z ${file.name}`);
+                const scSettings = settingsFromLua(text);
+                signalCraft.replace(scSettings || {});
+                loadTexts(r.texts, `Načteno ${plural(r.count, 'položka', 'položky', 'položek')} z ${file.name}` + (scSettings ? ' (i s nastavením SignalCraftu)' : ''));
                 if (r.outside) toast(`${plural(r.outside, 'položka leží', 'položky leží', 'položek leží')} mimo mřížku 160×50 a byly vynechány`, { error: true });
             } else {
+                signalCraft.replace({});
                 loadTexts(parseCSV(text), `Načteno z ${file.name}`);
             }
             projectName = file.name.replace(/\.(csv|lua|txt)$/i, '') || 'config';
@@ -502,6 +532,7 @@ function renderInspector(force = false) {
         default:
             html += '<p class="note warn">Obsahu buňky generátor nerozumí, do Lua se nevyexportuje. Opravte text níže nebo buňku smažte.</p>';
     }
+    if (settings.mode === 'sc') html += signalCraft.cellSection(c);
     if (c.kind !== 'empty') {
         html += `<label class="field">Text buňky <input type="text" class="mono" data-f="raw" value="${esc(text)}" autocomplete="off" spellcheck="false">
             <small>Přesně tak, jak je v buňce zapsaný. Enter potvrdí.</small></label>
@@ -868,7 +899,8 @@ $('#saveForm').addEventListener('submit', async e => {
     e.preventDefault();
     let name = $('#saveName').value.trim().replace(/\.lua$/i, '').replace(/[\\/:*?"<>|]+/g, '_') || 'config';
     saveDlg.close();
-    const text = configToLua(gridToConfig(grid.cells, offset));
+    // the SignalCraft settings go with the layout as a Lua comment (ORMS ignores it)
+    const text = configToLua(gridToConfig(grid.cells, offset)) + settingsToLua(signalCraft.settings);
     const file = name + '.lua';
     if (window.showSaveFilePicker) {
         let handle;
@@ -908,8 +940,14 @@ for (const d of document.querySelectorAll('dialog')) {
 // ------------------------------------------------------------------ SignalCraft
 const signalCraft = initSignalCraft({
     grid,
-    locate: (x, y) => { if (settings.view === 'preview') setView('split'); editor.flash(x, y); },
+    load: () => store.get('scSettings', {}),
+    save: sc => store.set('scSettings', sc),
+    locate: (x, y) => { if (settings.view === 'preview') setView('split'); editor.flash(x, y); editor.select(x, y, false, false); },
     setMarks: marks => { scMarks = marks; applyMarks(); },
+    toast,
+    onResult: () => { inspectorKey = ''; renderInspector(); },
+    tab: settings.scTab,
+    onTab: t => { settings.scTab = t; saveSettings(); },
 });
 
 // ------------------------------------------------------------------ start
@@ -922,6 +960,7 @@ setView(settings.view);
 setTab(settings.tab);
 updateZoom();
 const restored = restore();
+setMode(settings.mode);
 recompute();
 updateUndoButtons();
 editor.select(1, 1, false, false);
