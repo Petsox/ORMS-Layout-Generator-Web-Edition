@@ -8,7 +8,7 @@ import {
 import { validate } from './validate.js';
 import { gridToConfig, configToLua, parseLua, parseCSV, download } from './lua.js';
 import { buildScreen, paintScreen, centerOffset, switchLabel, signalLabel, COLORS, SCREEN_W, SCREEN_H } from './orms-render.js';
-import { initSignalCraft, settingsToLua, settingsFromLua } from './signalcraft-ui.js';
+import { initSignalCraft, settingsToLua, settingsFromLua, SPEEDS } from './signalcraft-ui.js';
 import { DEMO_LUA } from './demo.js';
 
 const $ = s => document.querySelector(s);
@@ -263,6 +263,7 @@ function openFile(file) {
                 if (!r.count) { toast('V souboru nejsou žádné položky Config.Tracks/Signals/…', { error: true }); return; }
                 const scSettings = settingsFromLua(text);
                 signalCraft.replace(scSettings || {});
+                signalCraft.mergeSpeeds(r.speeds);
                 loadTexts(r.texts, `Načteno ${plural(r.count, 'položka', 'položky', 'položek')} z ${file.name}` + (scSettings ? ' (i s nastavením SignalCraftu)' : ''));
                 if (r.outside) toast(`${plural(r.outside, 'položka leží', 'položky leží', 'položek leží')} mimo mřížku 160×50 a byly vynechány`, { error: true });
             } else {
@@ -494,6 +495,13 @@ function renderInspector(force = false) {
                 <div class="field">Odbočka (druhý symbol)${glyphButtons(PLAIN_TRACK, 'b', c.b)}</div>
                 <label class="field">Název <input type="text" data-f="name" value="${esc(c.name)}" autocomplete="off"></label>
                 <label class="chk block"><input type="checkbox" data-f="inv" ${c.inverted ? 'checked' : ''}> Invertovaná (fyzicky zapojená obráceně, oddělovač „I“)</label>`;
+            // speed through the curved position: ORMS speed aspect (R40, R60 …), EMZZ "rychlost do odbočky"; in the
+            // SignalCraft mode it is in the SignalCraft section below
+            if (settings.mode !== 'sc' && c.name) {
+                const v = signalCraft.switchSpeed(c.name) || 40;
+                html += `<label class="field">Rychlost do odbočky <select data-speed="${esc(c.name)}">${SPEEDS.map(s => `<option value="${s}"${s === v ? ' selected' : ''}>${s} km/h${s === 40 ? ' (výchozí)' : ''}</option>`).join('')}</select>
+                    <small>Návěst při jízdě do odbočky (R40, R60 …); bez údaje 40 km/h. V config.lua 7. položka výhybky.</small></label>`;
+            }
             if (c.point) {
                 html += `<dl class="kv"><dt>Hrot</dt><dd>${DIR_ARROW[c.point]} ${DIR_NAME[c.point]}</dd>
                     <dt>V ORMS</dt><dd>${esc(c.a)} vypnuto · ${esc(c.b)} zapnuto</dd>
@@ -609,6 +617,8 @@ $('#tabCell').addEventListener('click', e => {
     if (a && a.dataset.ins === 'copy') { clip = editor.copyText(); navigator.clipboard && navigator.clipboard.writeText(clip).catch(() => {}); toast('Zkopírováno'); }
 });
 $('#tabCell').addEventListener('change', e => {
+    const sp = e.target.closest('[data-speed]');
+    if (sp) { signalCraft.setSwitchSpeed(sp.dataset.speed, +sp.value); inspectorKey = ''; renderInspector(true); toast(`Výhybka ${sp.dataset.speed}: ${sp.value} km/h do odbočky`); return; }
     const el = e.target.closest('[data-f]');
     if (!el || el.tagName !== 'INPUT') return;
     applyField(el.dataset.f, el.type === 'checkbox' ? el.checked : el.value);
@@ -816,6 +826,16 @@ pv.canvas.addEventListener('click', e => {
     });
 })();
 
+/** config for ORMS with the speeds of the switches (7th element of Config.Switches; 40 km/h is not written) */
+function luaConfig(o) {
+    const cfg = gridToConfig(grid.cells, o);
+    for (const s of cfg.Switches) {
+        const v = signalCraft.switchSpeed(s.name);
+        if (v && v !== 40) s.speed = v;
+    }
+    return cfg;
+}
+
 // ------------------------------------------------------------------ Lua export dialog
 const luaDlg = $('#luaDialog');
 let luaText = '';
@@ -826,7 +846,7 @@ function openLuaDialog() {
 }
 function fillLua() {
     recompute();
-    const cfg = gridToConfig(grid.cells, offset);
+    const cfg = luaConfig(offset);
     luaText = configToLua(cfg);
     $('#luaCode').innerHTML = esc(luaText)
         .replace(/(&quot;.*?&quot;)/g, '<span class="s">$1</span>')
@@ -900,7 +920,7 @@ $('#saveForm').addEventListener('submit', async e => {
     let name = $('#saveName').value.trim().replace(/\.lua$/i, '').replace(/[\\/:*?"<>|]+/g, '_') || 'config';
     saveDlg.close();
     // the SignalCraft settings go with the layout as a Lua comment (ORMS ignores it)
-    const text = configToLua(gridToConfig(grid.cells, offset)) + settingsToLua(signalCraft.settings);
+    const text = configToLua(luaConfig(offset)) + settingsToLua(signalCraft.settings);
     const file = name + '.lua';
     if (window.showSaveFilePicker) {
         let handle;

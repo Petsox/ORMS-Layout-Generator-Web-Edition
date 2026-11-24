@@ -110,6 +110,7 @@
             <h2>Výhybky</h2>
             <p>Buňka výhybky má tvar <code>&lt;symbol1&gt; V &lt;symbol2&gt; &lt;název&gt;</code>, např. <code>═ V ╔ Vy1</code>. První symbol je vzhled ve vypnutém stavu (základní poloha), druhý ve stavu zapnutém (odbočka). Oba symboly musí mít právě jeden společný konec, to je hrot výhybky. Kontrola upozorní, když tomu tak není nebo když jsou oba symboly stejné.</p>
             <p><b>Invertovaná výhybka.</b> Pokud je fyzický blok výhybky ve světě otočený nebo zapojený obráceně oproti ostatním (po resetu ORMS ukazuje správný symbol, ale fyzicky je výhybka přehozená), použijte místo <code>V</code> oddělovač <code>I</code>, např. <code>═ I ╔ Vy1</code>, nebo zaškrtněte <span class="ui">Invertovaná</span> v panelu Buňka. Symboly a jejich pořadí zůstávají stejné; <code>I</code> jen řekne ORMS, aby pro tuhle výhybku poslal opačný povel.</p>
+            <p><b>Rychlost do odbočky.</b> V panelu Buňka u výhybky (v režimu SignalCraft v sekci SignalCraft nebo v záložce Výhybky) nastavíte rychlost jízdy do odbočky: 40 (výchozí), 50, 60, 80, 100 nebo 120 km/h. ORMS podle ní dá na návěstidle rychlostní návěst (R40, R60, R80, R100 – nejvyšší, kterou návěstidlo umí a která rychlost nepřekročí; nad 100 km/h žádnou), EMZZ v SignalCraftu ji bere jako rychlost výhybky. V config.lua je to 7. položka výhybky, např. <code>{90, 26, "═", "╔", "Vy5", false, 60}</code>; bez ní platí 40 km/h.</p>
             <p>Názvy výhybek musí být jedinečné, ORMS je ovládá podle názvu.</p>
         </section>
 

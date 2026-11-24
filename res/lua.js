@@ -49,7 +49,8 @@ export function configToLua(cfg) {
     return 'Config = {}\n' +
         block('Signals', cfg.Signals.map(s => `{${s.x}, ${s.y}, ${q(s.name)}, ${q(s.symbol)}}`)) +
         block('Tracks', cfg.Tracks.map(t => `{${t.x}, ${t.y}, ${q(t.text)}}`)) +
-        block('Switches', cfg.Switches.map(s => `{${s.x}, ${s.y}, ${q(s.a)}, ${q(s.b)}, ${q(s.name)}${s.inverted ? ', true' : ''}}`)) +
+        // 6th element: inverted; 7th: speed through the curved position in km/h (ORMS: 40 when missing)
+        block('Switches', cfg.Switches.map(s => `{${s.x}, ${s.y}, ${q(s.a)}, ${q(s.b)}, ${q(s.name)}${s.inverted || s.speed ? ', ' + (s.inverted ? 'true' : 'false') : ''}${s.speed ? ', ' + s.speed : ''}}`)) +
         block('Crossings', cfg.Crossings.map(c => `{${c.x}, ${c.y}, ${q(c.symbol)}, ${q(c.orient)}, ${q(c.name)}}`)) +
         block('Labels', cfg.Labels.map(l => `{${l.x}, ${l.y}, ${q(l.text)}}`)) +
         'return Config';
@@ -57,14 +58,16 @@ export function configToLua(cfg) {
 
 /**
  * Reads a config.lua (as written by configToLua) back into cell texts.
- * @returns {{texts: string[][], count: number, outside: number}}
+ * @returns {{texts: string[][], count: number, outside: number, speeds: Object<string, number>}}
+ *   speeds: switch name -> speed through the curved position (7th element of a Config.Switches entry)
  */
 export function parseLua(content) {
     const texts = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
     let count = 0, outside = 0;
+    const speeds = {};
     content = content.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
     const sectionPattern = /Config\.(\w+)\s*=\s*\{([\s\S]*?)\n\s*\}/g;
-    const entryPattern = /\{\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*(true))?\s*\}/g;
+    const entryPattern = /\{\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*(true|false))?(?:\s*,\s*(\d+(?:\.\d+)?))?\s*\}/g;
     const put = (x, y, text) => {
         if (y < 0 || y >= ROWS || x < 0 || x >= COLS) { outside++; return; }
         texts[y][x] = text;
@@ -80,7 +83,10 @@ export function parseLua(content) {
             count++;
             switch (name) {
                 case 'Tracks': [...f1].forEach((ch, i) => put(x + i, y, ch)); break;
-                case 'Switches': put(x, y, `${f1} ${inverted ? 'I' : 'V'} ${f2} ${f3}`); break;
+                case 'Switches':
+                    put(x, y, `${f1} ${inverted ? 'I' : 'V'} ${f2} ${f3}`);
+                    if (e[7]) speeds[f3] = +e[7];
+                    break;
                 case 'Signals': put(x, y, `${f2} N ${f1}`); break;
                 case 'Crossings': put(x, y, `${f1} P ${f2} ${f3}`); break;
                 case 'Labels': put(x, y, `L ${f1}`); break;
@@ -88,7 +94,7 @@ export function parseLua(content) {
             }
         }
     }
-    return { texts, count, outside };
+    return { texts, count, outside, speeds };
 }
 
 /** Reads a CSV project of the first version ("null" = empty cell, every value followed by a comma). */

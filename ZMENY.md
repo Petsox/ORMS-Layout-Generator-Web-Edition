@@ -1,5 +1,13 @@
 # ORMS Layout Generator – změny
 
+## 25. 11. 2026 – rychlosti výhybek
+
+- Rychlost do odbočky u výhybky (40 výchozí, 50, 60, 80, 100, 120 km/h) v panelu Buňka i v režimu ORMS; jedno nastavení pro
+  ORMS i SignalCraft (EMZZ).
+- config.lua: 7. položka výhybky `{x, y, "═", "╔", "Vy5", false, 60}` (6. = invertovaná); 40 km/h se nezapisuje. Při otevření
+  .lua se rychlosti načtou.
+- Nastavení SignalCraftu se v režimu ORMS nepřepočítává (neobarvuje mřížku).
+
 ## 24. 11. 2026 – režim SignalCraft
 
 - **Přepínač ORMS / SignalCraft** v hlavičce. V režimu SignalCraft je místo náhledu OpenComputers panel se

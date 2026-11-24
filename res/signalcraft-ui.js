@@ -21,7 +21,8 @@ const KIND_HELP = {
     vlozene: 'VS / VL na koleji pod skupinovým: „Odjezdové návěstidlo dovoluje jízdu“',
     vnitrni: 'nemá vlastní cesty, rozsvítí se, když přes něj vede vjezd',
 };
-const SPEEDS = [40, 50, 60, 80, 100];
+// speed through the diverging position of a switch (EMZZ: 40–160 km/h, ORMS: 40 when not given)
+export const SPEEDS = [40, 50, 60, 80, 100, 120];
 export const VALIDITY_TITLE = { posun: 'pro posun', vlak: 'pro jízdu vlaku', oba: 'pro posun i jízdu vlaku' };
 const TABS = [
     ['prehled', 'Přehled'], ['stavedla', 'Stavědla'], ['navestidla', 'Návěstidla'], ['vyhybky', 'Výhybky'],
@@ -100,7 +101,7 @@ export function initSignalCraft(env) {
         fn(sc);
         prune(sc);
         env.save(sc);
-        run();
+        if (active) run();
     }
     function boxIndex(id) { return res && res.info ? res.info.boxes.findIndex(b => b.id === id) : -1; }
 
@@ -474,6 +475,15 @@ export function initSignalCraft(env) {
         schedule,
         cellSection,
         get settings() { return sc; },
+        /** speed through the diverging position of a switch (km/h, null = not given: 40) */
+        switchSpeed(name) { return (sc.prvky && sc.prvky[name] && +sc.prvky[name].rychlost) || null; },
+        setSwitchSpeed(name, v) { change(s => setPath(s, ['prvky', name, 'rychlost'], v && +v !== 40 ? +v : '')); },
+        /** speeds read from the Config.Switches of an opened config.lua */
+        mergeSpeeds(speeds) {
+            const names = Object.keys(speeds || {});
+            if (!names.length) return;
+            change(s => { for (const n of names) setPath(s, ['prvky', n, 'rychlost'], +speeds[n] !== 40 ? +speeds[n] : ''); });
+        },
         /** settings of another layout (opened file, new layout) */
         replace(next) {
             sc = next || {};
