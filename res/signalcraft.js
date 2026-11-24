@@ -162,12 +162,30 @@ export function convertToStation(grid, options = {}) {
             if (n) p.number = n[1];
         }
     }
+    // the same line (label and station) at two track ends = a double-track line: two line tracks, numbered from the
+    // top; trains depart on the right-hand track in the direction of travel, enter on every track with an entry signal
+    const allX = [...cells.values()].map(c => c.x);
+    const centre = (Math.min(...allX) + Math.max(...allX)) / 2;
     for (const t of lines) {
         const same = lines.filter(u => u.label === t.label);
+        const twin = same.filter(u => u.name === t.name).sort((a, b) => a.end.y - b.end.y);
         t.id = same.length === 1 ? t.label : t.label + '_' + slug(t.name);
-        if (lines.filter(u => u.id === t.id).length > 1) errors.push(`${at(t.end.x, t.end.y)} trať ${t.label} ${t.name} je v kolejišti dvakrát`);
+        t.code = t.label;
+        if (twin.length > 1) {
+            const i = twin.indexOf(t);
+            t.id += (same.length === twin.length ? '_' : '') + (i + 1);
+            t.code = t.label + '/' + (i + 1);
+            const left = t.end.x < centre;
+            // departing to the left the right-hand track is the upper one, to the right the lower one
+            t.exitTrack = t === (left ? twin[0] : twin[twin.length - 1]);
+            if (twin.length > 2) errors.push(`${at(t.end.x, t.end.y)} trať ${t.label} ${t.name} má víc než dvě traťové koleje`);
+        }
     }
-    if (!boxes.length) errors.push('V kolejišti není žádné stavědlo: přidejte popisek "L ST1" (případně "L ST2" ...) ke zhlaví, které stavědlo obsluhuje');
+    if (!boxes.length) {
+        boxes.push({ id: 'ST1', name: 'Stavědlo 1', x: null, y: null, whole: true });
+        warnings.push('V kolejišti není popisek stavědla: celou stanici obsluhuje jedno stavědlo ST1. ' +
+            'Pro dvě stavědla dejte ke zhlavím popisky "L ST1" a "L ST2".');
+    }
 
     const trackNumbers = new Map(); // edge -> number
     for (const p of labels.filter(p => p.number)) {
@@ -196,6 +214,7 @@ export function convertToStation(grid, options = {}) {
     const distance = new Map(); // cell key -> [distance, box]
     const queue = [];
     for (const s of boxes) {
+        if (s.whole) continue;
         for (const c of cells.values()) {
             const v = Math.max(Math.abs(c.x - s.x), Math.abs(c.y - s.y));
             if (v <= 4) queue.push([v, c, s.id]);
@@ -222,7 +241,7 @@ export function convertToStation(grid, options = {}) {
     }
     for (const c of cells.values()) {
         if (c.type === 'track') continue;
-        const box = (distance.get(key(c.x, c.y)) || [])[1];
+        const box = (distance.get(key(c.x, c.y)) || [])[1] || (boxes.length === 1 && boxes[0].whole ? boxes[0].id : undefined);
         if (!box && boxes.length) errors.push(`${at(c.x, c.y)} ${typeName(c)} ${c.name}: žádné stavědlo k němu nevede po kolejích`);
         c.box = box;
         if (c.name) assignment[typeName(c) + ' ' + c.name] = box;
@@ -283,19 +302,42 @@ export function convertToStation(grid, options = {}) {
     const lineUse = new Map(lines.map(t => [t, { entry: false, exit: false }]));
     // an exit route continues past a main signal in its direction (route signals Sc / Lc before a group exit
     // signal, ORMS "repeater"); the signals it passes show the route too (mijene = main signals the route may pass)
+    // An inner main signal (e.g. S3a at the end of track 3a, its trains go on only past another main signal) has no
+    // routes, point lock or signal block of its own: entry routes pass it and it shows their aspect.
+    // a route that turns back to the other end of the station (a switch drawn the wrong way round, its point on the
+    // other side) is not a route: it is reported instead
+    const turnedBack = new Map();
+    const horizontal = d => (d === 'E' || d === 'W' ? d : null);
     const found = [];
-    for (const c of signals.filter(c => c.kind === 'main' && c.track)) {
+    let inner = new Set();
+    const mains = signals.filter(c => c.kind === 'main' && c.track);
+    for (const c of mains.filter(c => !c.entry)) {
         const targets = new Map();
-        const line = c.entry ? lineBehind(c, c.track) : null;
-        if (line) lineUse.get(line).entry = true;
-        search(c, c.dir, new Set(), targets, c.entry, []);
+        search(c, c.dir, new Set(), targets, false, [], c);
         found.push({ c, targets });
+    }
+    for (const { c, targets } of found) {
+        if (!/^(Sc|Lc)/.test(c.name) && targets.size && [...targets.values()].every(t => !t.direct)) inner.add(c.name);
+    }
+    for (const c of mains.filter(c => c.entry)) {
+        const targets = new Map();
+        const line = lineBehind(c, c.track);
+        if (line) lineUse.get(line).entry = true;
+        search(c, c.dir, new Set(), targets, true, [], c);
+        found.push({ c, targets });
+    }
+    // exits of inner signals are not routes: the lines are used only by the real routes
+    for (const t of lines) lineUse.get(t).exit = false;
+    for (const { c, targets } of found) {
+        if (c.entry || inner.has(c.name)) continue;
+        for (const id of targets.keys()) { const l = lines.find(t => t.id === id); if (l) lineUse.get(l).exit = true; }
     }
     // a group exit signal standing in the switch zone, passed by the routes of route signals, has no routes of its own
     // (no train can stand in front of it)
     const passedAll = new Set();
-    for (const f of found) for (const ps of f.targets.values()) for (const n of ps) passedAll.add(n);
+    for (const f of found) if (!inner.has(f.c.name)) for (const t of f.targets.values()) for (const n of t.passed) passedAll.add(n);
     for (const { c, targets } of found) {
+        if (inner.has(c.name)) continue;
         if (passedAll.has(c.name) && !trackNumbers.has(c.track)) continue;
         const to = [...targets.keys()];
         if (!to.length) {
@@ -304,12 +346,17 @@ export function convertToStation(grid, options = {}) {
             continue;
         }
         const r = { od: c.name, na: to.length === 1 ? to[0] : to };
-        const passed = [...new Set([...targets.values()].flat())];
+        const passed = [...new Set([...targets.values()].flatMap(t => t.passed))];
         if (passed.length) r.mijene = passed;
         routes.push(r);
     }
-    function search(node, dir, visited, targets, entry, passed) {
-        const add = id => { if (!targets.has(id)) targets.set(id, []); targets.get(id).push(...passed); };
+    function search(node, dir, visited, targets, entry, passed, start) {
+        const add = id => {
+            if (!targets.has(id)) targets.set(id, { direct: false, passed: [] });
+            const t = targets.get(id);
+            if (!passed.length) t.direct = true;
+            t.passed.push(...passed);
+        };
         const e = edgeAt(node, dir);
         if (!e || visited.has(e)) return;
         visited = new Set(visited).add(e);
@@ -317,23 +364,38 @@ export function convertToStation(grid, options = {}) {
         const into = entryInto(e, node);
         const line = lines.find(t => t.end === next);
         if (line) {
-            if (!entry) { add(line.id); lineUse.get(line).exit = true; }
+            // double-track line: departures only on the right-hand track
+            const back = horizontal(start.dir) && (start.dir === 'W') !== (line.end.x < centre);
+            if (!entry && back) turnedBack.set(start.name, line.name);
+            else if (!entry && line.exitTrack !== false) add(line.id);
             return;
         }
         if (next.type === 'signal' && next.kind === 'main' && next.dir === OPPOSITE[into]) {
             // a signal in the direction of travel: an entry route ends here on its track, an exit route passes it
-            if (entry) { if (trackNumbers.has(e)) add(e.id); return; }
-            if (next.dirs.length === 2) search(next, next.dirs.find(s => s !== into), visited, targets, entry, passed.concat(next.name));
+            if (entry) {
+                if (horizontal(start.dir) && horizontal(next.dir) && start.dir !== next.dir) { turnedBack.set(start.name, 'kolej ' + (trackNumbers.get(e) || e.id)); return; }
+                if (trackNumbers.has(e)) add(e.id);
+                // an inner main signal: the entry route may go on past it to the next tracks
+                if (inner.has(next.name) && next.dirs.length === 2) search(next, next.dirs.find(s => s !== into), visited, targets, entry, passed.concat(next.name), start);
+                return;
+            }
+            if (next.dirs.length === 2) search(next, next.dirs.find(s => s !== into), visited, targets, entry, passed.concat(next.name), start);
             return;
         }
         if (next.type === 'switch') {
-            if (into === next.point) { search(next, next.normal, visited, targets, entry, passed); search(next, next.reverse, visited, targets, entry, passed); }
-            else search(next, next.point, visited, targets, entry, passed);
+            if (into === next.point) { search(next, next.normal, visited, targets, entry, passed, start); search(next, next.reverse, visited, targets, entry, passed, start); }
+            else search(next, next.point, visited, targets, entry, passed, start);
             return;
         }
-        if (next.dirs.length === 2 && !isEnd(next)) search(next, next.dirs.find(s => s !== into), visited, targets, entry, passed);
+        if (next.dirs.length === 2 && !isEnd(next)) search(next, next.dirs.find(s => s !== into), visited, targets, entry, passed, start);
         // a numbered track ending freely continues outside the drawing (only one station end is drawn)
         else if (isEnd(next) && entry && trackNumbers.has(e)) add(e.id);
+    }
+
+    for (const [name, where] of turnedBack) {
+        const c = signals.find(x => x.name === name);
+        warnings.push(`${at(c.x, c.y)} od návěstidla ${name} by vlaková cesta vedla zpět na druhý konec stanice (${where}); ` +
+            'nejspíš je některá výhybka nakreslená obráceně (hrot na špatné straně), taková cesta se nevytvoří');
     }
 
     // ---------- 11. checks of lines and tracks ----------
@@ -349,6 +411,24 @@ export function convertToStation(grid, options = {}) {
         }
     }
     if (!lines.length) errors.push('V kolejišti není žádná trať: dejte k volnému konci koleje popisek "L T1 Jméno stanice"');
+
+    // ---------- crossovers: two switches joined directly by their reverse branches are thrown together ----------
+    // (spřažené výhybky, one point lever; otherwise a train could run from one track into the other's flank)
+    const coupled = [];
+    // the diverging branch is the one not opposite the point (the "+" glyph of ORMS may be the curved one)
+    const diverging = c => { const d = [c.normal, c.reverse].filter(x => x !== OPPOSITE[c.point]); return d.length === 1 ? d[0] : null; };
+    for (const a of cells.values()) {
+        if (a.type !== 'switch' || !diverging(a)) continue;
+        const e = edgeAt(a, diverging(a));
+        const b = e && other(e, a);
+        if (!b || b.type !== 'switch' || b === a || !diverging(b) || edgeAt(b, diverging(b)) !== e || a.name > b.name) continue;
+        if (a.box !== b.box) {
+            // one lever: both belong to the signal box of the first one
+            b.box = a.box;
+            assignment[typeName(b) + ' ' + b.name] = a.box;
+        }
+        coupled.push([a.name, b.name]);
+    }
 
     if (errors.length) return { station: null, errors, warnings, assignment };
 
@@ -378,11 +458,11 @@ export function convertToStation(grid, options = {}) {
             hrot: edgeAt(c, c.point).id, plus: edgeAt(c, c.normal).id, minus: edgeAt(c, c.reverse).id,
             stavedlo: c.box, ...(c.inverted ? { invertovana: true } : {}),
         })),
-        sprazene: [],
+        sprazene: coupled,
         trate: lines.map(t => {
             const e = edges.find(e => e.a === t.end || e.b === t.end);
             return {
-                id: t.id, oznaceni: t.label, uzel: nodes.get(key(t.end.x, t.end.y)), kolej: e.id, nazev: t.name,
+                id: t.id, oznaceni: t.code, uzel: nodes.get(key(t.end.x, t.end.y)), kolej: e.id, nazev: t.name,
                 od: 'z ' + t.name, do: 'do ' + t.name, strana: t.end.x < middle ? 'L' : 'S', provoz: t.traffic,
             };
         }),
