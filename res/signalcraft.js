@@ -317,7 +317,7 @@ export function convertToStation(grid, options = {}) {
         found.push({ c, targets });
     }
     for (const { c, targets } of found) {
-        if (!/^(Sc|Lc)/.test(c.name) && targets.size && [...targets.values()].every(t => !t.direct)) inner.add(c.name);
+        if (!/^(Sc|Lc|VS|VL)/.test(c.name) && targets.size && [...targets.values()].every(t => !t.direct)) inner.add(c.name);
     }
     for (const c of mains.filter(c => c.entry)) {
         const targets = new Map();
